@@ -307,7 +307,7 @@ namespace AdysTech.Influxer
                 var influxIdentifiers = new char[]{' ',';','_','(',')','%'};
                 pecrfCounters.AddRange (columns.Skip (1).Where (s => s.StartsWith ("\\")).Select (p => 
                         String.Join("_",p.split(influxIdentifiers, StringSplitOptions.RemoveEmptyEntries)))
-                        .Split ('\\')).Select (p => 
+                        .Split ('\\').Select (p => 
                             new PerfmonCounter () 
                             {   
                                 ColumnIndex = column++, 
