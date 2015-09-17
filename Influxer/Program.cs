@@ -374,7 +374,7 @@ namespace AdysTech.Influxer
                         lineStartIndex = content.Length;
                         content.AppendFormat ("{0},Host={1}", group.Key, hostGrp.Key);
                         if ( tags != null )
-                            content.AppendFormat ("{0} ", tags);
+                            content.AppendFormat (",{0} ", tags);
                         else
                             content.Append (" ");
 
