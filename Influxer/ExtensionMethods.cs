@@ -31,7 +31,7 @@ namespace AdysTech.Influxer
            string[] temp;
     
            temp = s.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-           return String.Join( newValue, temp );
+           return String.Join( " ", temp ).Time().Replace(" ",newValue);
        }
     }
 }
