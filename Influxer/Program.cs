@@ -303,18 +303,17 @@ namespace AdysTech.Influxer
                 if ( x.Count > 0 )
                     minOffset = int.Parse (x[3].ToString ());
                 //get the column headers
-                var column = 1;
-                var influxIdentifiers = new char[]{' ',';','_','(',')','%'};
-                pecrfCounters.AddRange (columns.Skip (1).Where (s => s.StartsWith ("\\")).Select (p => 
-                        String.Join("_",p.Split(influxIdentifiers, StringSplitOptions.RemoveEmptyEntries)))
-                        .Split ('\\').Select (p => 
-                            new PerfmonCounter () 
-                            {   
-                                ColumnIndex = column++, 
-                                Host = p[2], 
-                                PerformanceObject = p[3], 
-                                CounterName = p[4] 
-                            }));
+               var column = 1;
+               var influxIdentifiers = new char[]{' ',';','_','(',')','%'};
+               pecrfCounters.AddRange (columns.Skip (1).Where (s => s.StartsWith ("\\")).Select (p => 
+                		p.Replace (influxIdentifiers, "_").Split ('\\')).Select (p => 
+                			new PerfmonCounter () 
+                			{ 
+                				ColumnIndex = column++, 
+                				Host = p[2], 
+                				PerformanceObject = p[3], 
+                				CounterName = p[4] 
+                			}));
                 perfGourp = pecrfCounters.GroupBy (p => p.PerformanceObject);
 
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
