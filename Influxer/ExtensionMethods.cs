@@ -23,4 +23,15 @@ namespace AdysTech.Influxer
             return (long) ( t.TotalSeconds );
         }
     }
+    
+    public static class StringExtensionMethods
+    {
+       public static string Replace(this string s, char[] separators, string newValue)
+       {
+           string[] temp;
+    
+           temp = s.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+           return String.Join( newValue, temp );
+       }
+    }
 }
