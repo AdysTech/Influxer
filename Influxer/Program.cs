@@ -305,14 +305,15 @@ namespace AdysTech.Influxer
                 //get the column headers
                var column = 1;
                var influxIdentifiers = new char[]{' ',';','_','(',')','%'};
+               var whiteSpace = new char[]{'_'};
                pecrfCounters.AddRange (columns.Skip (1).Where (s => s.StartsWith ("\\")).Select (p => 
                 		p.Replace (influxIdentifiers, "_").Split ('\\')).Select (p => 
                 			new PerfmonCounter () 
                 			{ 
                 				ColumnIndex = column++, 
-                				Host = p[2], 
-                				PerformanceObject = p[3], 
-                				CounterName = p[4] 
+                				Host = p[2].Trim(whiteSpace), 
+                				PerformanceObject = p[3].Trim(whiteSpace), 
+                				CounterName = p[4].Trim(whiteSpace) 
                 			}));
                 perfGourp = pecrfCounters.GroupBy (p => p.PerformanceObject);
 
