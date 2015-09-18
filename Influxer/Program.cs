@@ -130,6 +130,9 @@ namespace AdysTech.Influxer
             #endregion
             try
             {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                
                 HttpClientHandler handler = new HttpClientHandler ();
                 handler.UseDefaultCredentials = true;
                 handler.PreAuthenticate = true;
@@ -158,10 +161,10 @@ namespace AdysTech.Influxer
                         result = ProcessGenericFile (inputFileName, tableName, client).Result;
                         break;
                 }
-
+                stopwatch.Stop();
                 if ( result )
                 {
-                    Console.WriteLine ("Finished!!");
+                    Console.WriteLine ("\n Finished!! Processed in {0}", stopwatch.Elapsed.ToString());
                     return 0;
                 }
 
