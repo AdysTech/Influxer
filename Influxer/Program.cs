@@ -1,4 +1,4 @@
-//Copyright -  Adarsha@AdysTech
+﻿//Copyright -  Adarsha@AdysTech
 //https://github.com/AdysTech/Influxer/blob/master/Influxer/Program.cs
 using System;
 using System.Collections.Generic;
@@ -21,15 +21,16 @@ namespace AdysTech.Influxer
         {
             None,
             Measurement,
-            Field
+            Field,
+            Columns
         }
 
-		enum FileFormats
-		{
-			Perfmon,
-			Generic
-		}
-		
+        enum FileFormats
+        {
+            Perfmon,
+            Generic
+        }
+
         const string InfluxUrlSwitch = "-influx";
         const string InfluxDBSwitch = "-dbname";
         const string TagsSwitch = "-tags";
@@ -41,6 +42,7 @@ namespace AdysTech.Influxer
         const string FileFormatSwitch = "-format";
         const string TableNameSwitch = "-table";
         const string FilterSwitch = "-filter";
+        const string ColumnsSwitch = "-columns";
 
         private static string influxUrl;
         private static string influxDB;
@@ -54,7 +56,10 @@ namespace AdysTech.Influxer
         private static string tableName;
         private static Regex pattern;
         private static Filters filter;
-		private static Dictionary<string,List<string>> dbStructure;
+        private static string filteredColumns;
+
+        private static char[] influxIdentifiers = new char[] { ' ', ';', '_', '(', ')', '%', '#', '.', '/', '[', ']', '{', '}', '"' };
+        private static char[] whiteSpace = new char[] { '_' };
 
         static int Main(string[] args)
         {
@@ -72,6 +77,11 @@ namespace AdysTech.Influxer
                 Console.WriteLine ("-timeformat <format>:   Timeformat used by PerfMon (default MM/dd/yyyy hh:mm:ss.fff)");
                 Console.WriteLine ("-format <format>    :   CSV File format PerfMon(default) and Generic are supported. For generic TableName is required");
                 Console.WriteLine ("-table <table name> :   Influx Table name needed for generic fomat only");
+                Console.WriteLine ("-filter <filter>    :   supported:measurement, field, columns.");
+                Console.WriteLine ("-columns <columns>  :   Comma seperated list of columns from input files");
+                Console.WriteLine ("-filter-measurement or field is to restrict the input file to only measurements or fileds that already present in the database");
+                Console.WriteLine ("-filter-columns is to restrict to only few columns from the input irrespective of existing data in database");
+                Console.WriteLine ("-columns will be ignored in other cases. Replace any inline commas in columns names with a space!");
                 return 0;
             }
 
@@ -103,7 +113,7 @@ namespace AdysTech.Influxer
             if ( cmdArgs.ContainsKey (TagsSwitch) )
                 tags = cmdArgs[TagsSwitch].Replace (' ', '_');
 
-			if ( cmdArgs.ContainsKey (TableNameSwitch) )
+            if ( cmdArgs.ContainsKey (TableNameSwitch) )
                 tableName = cmdArgs[TableNameSwitch];
 
             if ( cmdArgs.ContainsKey (InputFileNameSwitch) )
@@ -135,34 +145,66 @@ namespace AdysTech.Influxer
 
             if ( cmdArgs.ContainsKey (FileFormatSwitch) )
             {
-                if(!Enum.TryParse<FileFormats>(cmdArgs[FileFormatSwitch], true, out fileFormat) || !Enum.IsDefined(typeof(FileFormats), fileFormat))
+                if ( !Enum.TryParse<FileFormats> (cmdArgs[FileFormatSwitch], true, out fileFormat) || !Enum.IsDefined (typeof (FileFormats), fileFormat) )
                 {
                     Console.WriteLine ("Not supported format{0}!!", cmdArgs[FileFormatSwitch]);
                     return 1;
                 }
             }
-			{
-				fileFormat = FileFormats.Perfmon;
-			}
+            {
+                fileFormat = FileFormats.Perfmon;
+            }
 
             if ( cmdArgs.ContainsKey (FilterSwitch) )
-			{
-				if(!Enum.TryParse<Filters>(cmdArgs[FilterSwitch], true, out filter) || !Enum.IsDefined(typeof(Filters), filter))
-				{
-					Console.WriteLine ("Not supported filter:{0}!!", cmdArgs[FilterSwitch]);
+            {
+                if ( !Enum.TryParse<Filters> (cmdArgs[FilterSwitch], true, out filter) || !Enum.IsDefined (typeof (Filters), filter) )
+                {
+                    Console.WriteLine ("Not supported filter:{0}!!", cmdArgs[FilterSwitch]);
                     return 1;
-				}
-			}
-			else
-			{
-				filter = Filters.None;
-			}
+                }
+            }
+            else
+            {
+                filter = Filters.None;
+            }
+
+            if ( cmdArgs.ContainsKey (ColumnsSwitch) )
+            {
+                if ( filter != Filters.Columns )
+                {
+                    Console.WriteLine ("Column filtering is supported only with -filter Columns!!");
+                    return 1;
+                }
+                if ( String.IsNullOrWhiteSpace (cmdArgs[ColumnsSwitch]) )
+                {
+                    Console.WriteLine ("Invalid Column filter!!");
+                    return 1;
+                }
+
+                filteredColumns = cmdArgs[ColumnsSwitch];
+
+                try
+                {
+                    var temp = ParsePerfMonFileHeader (filteredColumns, false);
+                    if ( temp.Count == 0 )
+                    {
+                        Console.WriteLine ("No columns filtered!!");
+                        return 1;
+                    }
+                }
+                catch ( Exception e )
+                {
+                    Console.WriteLine ("Unable to parse column filters");
+                    return 1;
+                }
+            }
+
 
             #endregion
             try
             {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                Stopwatch stopwatch = new Stopwatch ();
+                stopwatch.Start ();
 
                 HttpClientHandler handler = new HttpClientHandler ();
                 handler.UseDefaultCredentials = true;
@@ -174,16 +216,11 @@ namespace AdysTech.Influxer
                 if ( !( String.IsNullOrWhiteSpace (influxDBUserName) && String.IsNullOrWhiteSpace (influxDBPassword) ) )
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue ("Basic", Convert.ToBase64String (System.Text.ASCIIEncoding.ASCII.GetBytes (string.Format ("{0}:{1}", influxDBUserName, influxDBPassword))));
 
-                if ( !VerifyDatabaseAsync(client, influxDB).Result )
+                if ( !VerifyDatabaseAsync (client, influxDB).Result )
                 {
                     Console.WriteLine ("Unable to create DB {0}", influxDB);
                     return -1;
                 }
-
-
-				if(filter!=Filters.None)
-					dbStructure = GetInfluxDBStructureAsync(client,new Uri (influxUrl + "/query?"),influxDB).Result;
-
 
                 var result = false;
                 switch ( fileFormat )
@@ -198,10 +235,10 @@ namespace AdysTech.Influxer
                         break;
                 }
 
-                stopwatch.Stop();
+                stopwatch.Stop ();
                 if ( result )
                 {
-                    Console.WriteLine ("\n Finished!! Processed in {0}", stopwatch.Elapsed.ToString());
+                    Console.WriteLine ("\n Finished!! Processed in {0}", stopwatch.Elapsed.ToString ());
                     return 0;
                 }
 
@@ -227,11 +264,11 @@ namespace AdysTech.Influxer
                 return true;
             else
             {
-				if(filter!=Filters.None)
-				{	
-					Console.WriteLine("Measurement/Field filtering is not applicable for new database!!");
-					filter=Filters.None;
-				}
+                if ( filter == Filters.Measurement || filter == Filters.Field )
+                {
+                    Console.WriteLine ("Measurement/Field filtering is not applicable for new database!!");
+                    filter = Filters.None;
+                }
                 return await CreateInfluxDBAsync (client, DBName, influxAddress);
             }
         }
@@ -263,62 +300,62 @@ namespace AdysTech.Influxer
             return null;
         }
 
-		private static async Task<Dictionary<string,List<String>>> GetInfluxDBStructureAsync(HttpClient client, Uri InfluxPath, string dbName)
+        private static async Task<Dictionary<string, List<String>>> GetInfluxDBStructureAsync(HttpClient client, Uri InfluxPath, string dbName)
         {
-			var dbStructure = new Dictionary<string,List<string>>();
+            var dbStructure = new Dictionary<string, List<string>> ();
             try
-			{
-				var builder = new UriBuilder (InfluxPath);
-				//builder.UserName = influxDBUserName;
-				//builder.Password = influxDBPassword;
-				builder.Query = await new FormUrlEncodedContent (new[] { 
+            {
+                var builder = new UriBuilder (InfluxPath);
+                //builder.UserName = influxDBUserName;
+                //builder.Password = influxDBPassword;
+                builder.Query = await new FormUrlEncodedContent (new[] { 
 					new KeyValuePair<string, string>("u",influxDBUserName) ,
 					new KeyValuePair<string, string>("p", influxDBPassword) ,
 					new KeyValuePair<string, string>("db", dbName) ,
 					new KeyValuePair<string, string>("q", "SHOW FIELD KEYS") 
 					}).ReadAsStringAsync ();
-				HttpResponseMessage response = await client.GetAsync (builder.Uri);
+                HttpResponseMessage response = await client.GetAsync (builder.Uri);
 
-				if ( response.StatusCode == HttpStatusCode.OK )
-				{
-					var content = await response.Content.ReadAsStringAsync ();
-					var values=Regex.Matches (content, "([a-zA-Z0-9_]+)").Cast<Match>().Select (match => match.Value).ToList();
-					string measurement;
-					//one pass loop through the entries in returned structure. Each new measurement starts with "name",measurement name, "columns","fieldKey","values",list of columns
-					//we will search for name, and once found grab measurement name, skip 3 lines, and grab column names
-					for(int i=0;i<values.Count;i++)
-					{
-						if(values[i]!="name")
-							continue;
-						if(values[i]=="name")
-						{
-							if(++i==values.Count) 
-								throw new InvalidDataException("Invalid data returned from InfluxDB");
-							//i is incremented
-							measurement=values[i];
-							dbStructure.Add(measurement,new List<string>());
-							for(int j=i+4;j<values.Count;j++)
-							{
-								if(values[j]=="name")
-								{
-									i=j-1;
-									break;
-								}
-								dbStructure[measurement].Add(values[j]);
-							}
-						}
-					}
-				}
-			}
-			catch ( HttpRequestException e )
-			{
+                if ( response.StatusCode == HttpStatusCode.OK )
+                {
+                    var content = await response.Content.ReadAsStringAsync ();
+                    var values = Regex.Matches (content, "([a-zA-Z0-9_]+)").Cast<Match> ().Select (match => match.Value).ToList ();
+                    string measurement;
+                    //one pass loop through the entries in returned structure. Each new measurement starts with "name",measurement name, "columns","fieldKey","values",list of columns
+                    //we will search for name, and once found grab measurement name, skip 3 lines, and grab column names
+                    for ( int i = 0; i < values.Count; i++ )
+                    {
+                        if ( values[i] != "name" )
+                            continue;
+                        if ( values[i] == "name" )
+                        {
+                            if ( ++i == values.Count )
+                                throw new InvalidDataException ("Invalid data returned from InfluxDB");
+                            //i is incremented
+                            measurement = values[i];
+                            dbStructure.Add (measurement, new List<string> ());
+                            for ( int j = i + 4; j < values.Count; j++ )
+                            {
+                                if ( values[j] == "name" )
+                                {
+                                    i = j - 1;
+                                    break;
+                                }
+                                dbStructure[measurement].Add (values[j]);
+                            }
+                        }
+                    }
+                }
+            }
+            catch ( HttpRequestException e )
+            {
 
-			}
+            }
 
-			return dbStructure;
+            return dbStructure;
         }
-		
-		
+
+
         private static async Task<bool> CreateInfluxDBAsync(HttpClient client, string dbName, Uri InfluxPath)
         {
             try
@@ -386,47 +423,60 @@ namespace AdysTech.Influxer
                 var failedCount = 0;
                 StringBuilder content = new StringBuilder ();
 
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                Stopwatch stopwatch = new Stopwatch ();
+                stopwatch.Start ();
 
                 var influxAddress = new Uri (influxUrl + "/write?db=" + influxDB + "&precision=s");
 
-                
-                var firstLine = File.ReadLines (InputFileName).FirstOrDefault ();                
-                
-				var firstCol = firstLine.Substring(0, firstLine.IndexOf(','));
-				if ( !firstCol.Contains ("PDH-CSV") )
+
+                var firstLine = File.ReadLines (InputFileName).FirstOrDefault ();
+
+                var firstCol = firstLine.Substring (0, firstLine.IndexOf (','));
+                if ( !firstCol.Contains ("PDH-CSV") )
                     throw new Exception ("Input file is not a Standard Perfmon csv file");
                 var x = Regex.Matches (firstCol, "([-0-9]+)");
                 if ( x.Count > 0 )
-        			minOffset = int.Parse (x[3].ToString ());
-				
-				//get the column headers
-			   try
-			   {
-			   		List<PerfmonCounter> pecrfCounters = ParsePerfMonFileHeader(firstLine);
-			   }
-			   catch(Exception ex)
-			   {
-				   throw new InvalidDataException("Unable to parse file headers",ex);
-			   }
-				
-               IEnumerable<IGrouping<string, PerfmonCounter>> perfGourp = pecrfCounters.GroupBy (p => p.PerformanceObject);
+                    minOffset = int.Parse (x[3].ToString ());
+
+                //get the column headers
+                List<PerfmonCounter> pecrfCounters;
+                try
+                {
+                    pecrfCounters = ParsePerfMonFileHeader (firstLine);
+                }
+                catch ( Exception ex )
+                {
+                    throw new InvalidDataException ("Unable to parse file headers", ex);
+                }
+
+                var filterColumns = ParsePerfMonFileHeader (filteredColumns, false);
+
+                Dictionary<string, List<string>> dbStructure;
+                IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup;
+                if ( filter != Filters.None )
+                {
+                    dbStructure = await GetInfluxDBStructureAsync (client, new Uri (influxUrl + "/query?"), influxDB);
+                    perfGroup = FilterPerfmonLogColumns (pecrfCounters, filterColumns, dbStructure).GroupBy (p => p.PerformanceObject);
+                }
+                else
+                {
+                    perfGroup = pecrfCounters.GroupBy (p => p.PerformanceObject);
+                }
 
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
                 foreach ( var line in File.ReadLines (InputFileName).Skip (1) )
                 {
                     try
                     {
-                        if (! await ProcessPerfmonLogLine (line, perfGourp, minOffset, pattern, client, influxAddress) )
-                            failedCount++; 
+                        if ( !await ProcessPerfmonLogLine (line, perfGroup, minOffset, pattern, client, influxAddress) )
+                            failedCount++;
 
-						lineCount++;
+                        lineCount++;
 
-						if(failedCount>0)
-							Console.Write ("\r{0} Processed {1}, Failed - {2}                        ",stopwatch.Elapsed.ToString("hh:mm:ss"), lineCount, failedCount);
-						else
-							Console.Write ("\r{0} Processed {1}                          ",stopwatch.Elapsed.ToString("hh:mm:ss"), lineCount);	
+                        if ( failedCount > 0 )
+                            Console.Write ("\r{0} Processed {1}, Failed - {2}                        ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount, failedCount);
+                        else
+                            Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount);
                     }
                     catch ( Exception e )
                     {
@@ -437,7 +487,7 @@ namespace AdysTech.Influxer
                 }
 
 
-                stopwatch.Stop();
+                stopwatch.Stop ();
                 //Debug.WriteLine("Done Async Processing, Time elapsed: {0}", stopwatch.Elapsed);
 
                 lineCount = 0;
@@ -454,28 +504,41 @@ namespace AdysTech.Influxer
             }
             return true;
         }
-		
-		private static List<PerfmonCounter> ParsePerfMonFileHeader(string headerLine)
+
+        private static List<PerfmonCounter> ParsePerfMonFileHeader(string headerLine, bool quoted = true)
         {
-			List<PerfmonCounter> pecrfCounters = new List<PerfmonCounter> ();
-			var columns = pattern.Split (firstLine);			
-			var column = 1;
-			var influxIdentifiers = new char[]{' ',';','_','(',')','%','#','.','/','[',']','{','}','"'};
-			var whiteSpace = new char[]{'_'};
-			pecrfCounters.AddRange (columns.Skip (1).Where (s => s.StartsWith ("\"\\")).Select (p => 
-					p.Replace (influxIdentifiers, "_").Split ('\\')).Select (p => 
-						new PerfmonCounter () 
-						{ 
-							ColumnIndex = column++, 
-							Host = p[2].Trim(whiteSpace), 
-							PerformanceObject = p[3].Trim(whiteSpace), 
-							CounterName = p[4].Trim(whiteSpace) 
-						}));
-			return pecrfCounters;
+            List<PerfmonCounter> perfCounters = new List<PerfmonCounter> ();
+            if ( String.IsNullOrWhiteSpace (headerLine) ) return perfCounters;
+            var columns = pattern.Split (headerLine);
+            var column = 1;
+
+            perfCounters.AddRange (columns.Skip (quoted ? 1 : 0).Where (s => quoted ? s.StartsWith ("\"\\") : s.StartsWith ("\\")).Select (p =>
+                    p.Replace (influxIdentifiers, "_").Split ('\\')).Select (p =>
+                        new PerfmonCounter ()
+                        {
+                            ColumnIndex = column++,
+                            Host = p[2].Trim (whiteSpace),
+                            PerformanceObject = p[3].Trim (whiteSpace),
+                            CounterName = p[4].Trim (whiteSpace)
+                        }));
+            return perfCounters;
         }
 
+        private static List<PerfmonCounter> FilterPerfmonLogColumns(List<PerfmonCounter> columns, List<PerfmonCounter> filterColumns, Dictionary<string, List<string>> dbStructure)
+        {
+            switch ( filter )
+            {
+                case Filters.Measurement:
+                    return columns.Where (p => dbStructure.ContainsKey (p.PerformanceObject)).ToList ();
+                case Filters.Field:
+                    return columns.Where (p => dbStructure[p.PerformanceObject].Contains (p.CounterName)).ToList ();
+                case Filters.Columns:
+                    return columns.Where (p => filterColumns.Any (f => p.PerformanceObject == f.PerformanceObject && p.CounterName == f.CounterName)).ToList ();
+            }
+            return columns;
+        }
 
-        private static async Task<bool> ProcessPerfmonLogLine(string line, IEnumerable<IGrouping<string, PerfmonCounter>> perfGourp, int minOffset, Regex pattern, HttpClient client, Uri InfluxPath)
+        private static async Task<bool> ProcessPerfmonLogLine(string line, IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup, int minOffset, Regex pattern, HttpClient client, Uri InfluxPath)
         {
             StringBuilder content = new StringBuilder ();
             DateTime timeStamp;
@@ -492,15 +555,12 @@ namespace AdysTech.Influxer
                 content.Clear ();
                 var lineStartIndex = 0;
 
-                foreach ( var group in perfGourp )
+                foreach ( var group in perfGroup )
                 {
                     foreach ( var hostGrp in group.GroupBy (p => p.Host) )
                     {
                         lineStartIndex = content.Length;
-						if(filter == Filters.None || dbStructure.ContainsKey(group.Key))
-                        	content.AppendFormat ("{0},Host={1}", group.Key, hostGrp.Key);
-						else
-							continue;
+                        content.AppendFormat ("{0},Host={1}", group.Key, hostGrp.Key);
 
                         if ( tags != null )
                             content.AppendFormat (",{0} ", tags);
@@ -513,11 +573,9 @@ namespace AdysTech.Influxer
                         {
                             if ( !String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value) )
                             {
-								if(filter != Filters.Field || dbStructure[group.Key].Any(s=>s==counter.CounterName))
-								{
-									content.AppendFormat ("{0}={1:0.00},", counter.CounterName, value);
-                                	useCounter = true;
-								}
+                                content.AppendFormat ("{0}={1:0.00},", counter.CounterName, value);
+                                useCounter = true;
+
                             }
                         }
 
@@ -573,15 +631,15 @@ namespace AdysTech.Influxer
                 {
                     try
                     {
-                        if (! await ProcessGenericLine (line, columnHeaders, pattern, client, influxAddress) )
-                            failedCount++; 
+                        if ( !await ProcessGenericLine (line, columnHeaders, pattern, client, influxAddress) )
+                            failedCount++;
 
-						lineCount++;
+                        lineCount++;
 
-						if(failedCount>0)
-							Console.Write ("\r Processed {0}, Failed - {1}                        ", lineCount, failedCount);
-						else
-							Console.Write ("\r Processed {0}                          ", lineCount);	
+                        if ( failedCount > 0 )
+                            Console.Write ("\r Processed {0}, Failed - {1}                        ", lineCount, failedCount);
+                        else
+                            Console.Write ("\r Processed {0}                          ", lineCount);
 
                     }
                     catch ( Exception e )
