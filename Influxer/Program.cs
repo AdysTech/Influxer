@@ -43,6 +43,7 @@ namespace AdysTech.Influxer
         const string TableNameSwitch = "-table";
         const string FilterSwitch = "-filter";
         const string ColumnsSwitch = "-columns";
+        const string UtcOffsetSwitch = "-gmtoffset";
 
         private static string influxUrl;
         private static string influxDB;
@@ -57,6 +58,7 @@ namespace AdysTech.Influxer
         private static Regex pattern;
         private static Filters filter;
         private static string filteredColumns;
+        private static int utcOffsetMin = 0;
 
         private static char[] influxIdentifiers = new char[] { ' ', ';', '_', '(', ')', '%', '#', '.', '/', '[', ']', '{', '}', '"' };
         private static char[] whiteSpace = new char[] { '_' };
@@ -79,6 +81,8 @@ namespace AdysTech.Influxer
                 Console.WriteLine ("-table <table name> :   Influx Table name needed for generic fomat only");
                 Console.WriteLine ("-filter <filter>    :   supported:measurement, field, columns.");
                 Console.WriteLine ("-columns <columns>  :   Comma seperated list of columns from input files");
+                Console.WriteLine ("-utcoffset          :   supported:measurement, field, columns.Offset in minutes to UTC. Applicable to Generic format only");
+
                 Console.WriteLine ("-filter-measurement or field is to restrict the input file to only measurements or fileds that already present in the database");
                 Console.WriteLine ("-filter-columns is to restrict to only few columns from the input irrespective of existing data in database");
                 Console.WriteLine ("-columns will be ignored in other cases. Replace any inline commas in columns names with a space!");
@@ -151,6 +155,7 @@ namespace AdysTech.Influxer
                     return 1;
                 }
             }
+            else
             {
                 fileFormat = FileFormats.Perfmon;
             }
@@ -185,8 +190,8 @@ namespace AdysTech.Influxer
 
                 try
                 {
-                    var temp = ParsePerfMonFileHeader (filteredColumns, false);
-                    if ( temp.Count == 0 )
+                    if ( ( fileFormat == FileFormats.Perfmon && ParsePerfMonFileHeader (filteredColumns, false).Count == 0 ) ||
+                        ( fileFormat == FileFormats.Generic && ParseGenericColumns (filteredColumns).Count == 0 ) )
                     {
                         Console.WriteLine ("No columns filtered!!");
                         return 1;
@@ -199,6 +204,10 @@ namespace AdysTech.Influxer
                 }
             }
 
+            if ( cmdArgs.ContainsKey (UtcOffsetSwitch) )
+            {
+                utcOffsetMin = int.Parse (cmdArgs[UtcOffsetSwitch]);
+            }
 
             #endregion
             try
@@ -531,7 +540,7 @@ namespace AdysTech.Influxer
                 case Filters.Measurement:
                     return columns.Where (p => dbStructure.ContainsKey (p.PerformanceObject)).ToList ();
                 case Filters.Field:
-                    return columns.Where (p => dbStructure[p.PerformanceObject].Contains (p.CounterName)).ToList ();
+                    return columns.Where (p => dbStructure.ContainsKey (p.PerformanceObject) && dbStructure[p.PerformanceObject].Contains (p.CounterName)).ToList ();
                 case Filters.Columns:
                     return columns.Where (p => filterColumns.Any (f => p.PerformanceObject == f.PerformanceObject && p.CounterName == f.CounterName)).ToList ();
             }
@@ -620,11 +629,23 @@ namespace AdysTech.Influxer
                 var failedCount = 0;
 
                 var influxAddress = new Uri (influxUrl + "/write?db=" + influxDB + "&precision=s");
-                client.BaseAddress = influxAddress;
-                List<string> columnHeaders = new List<string> ();
+              
+                List<GenericColumn> columnHeaders;
 
                 var firstLine = File.ReadLines (InputFileName).FirstOrDefault ();
-                columnHeaders.AddRange (pattern.Split (firstLine.Replace ("\"", "")));
+                var index = 0;
+                columnHeaders = ParseGenericColumns (firstLine);
+
+                Dictionary<string, List<string>> dbStructure;
+                IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup;
+                if ( filter != Filters.None )
+                {
+                    var filterColumns = ParseGenericColumns (filteredColumns);
+
+                    dbStructure = await GetInfluxDBStructureAsync (client, new Uri (influxUrl + "/query?"), influxDB);
+                    columnHeaders = FilterGenericColumns (columnHeaders, filterColumns, dbStructure);
+
+                }
 
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
                 foreach ( var line in File.ReadLines (InputFileName).Skip (1) )
@@ -661,7 +682,29 @@ namespace AdysTech.Influxer
             return true;
         }
 
-        private async static Task<bool> ProcessGenericLine(string line, List<string> columnHeaders, Regex pattern, HttpClient client, Uri InfluxPath)
+        private static List<GenericColumn> ParseGenericColumns(string headerLine)
+        {
+            var columns = new List<GenericColumn> ();
+            int index = 0;
+            columns.AddRange (pattern.Split (headerLine).Select (s => new GenericColumn () {ColumnIndex=index++, ColumnHeader = s.Replace (influxIdentifiers, "_") }));
+            return columns;
+        }
+
+        private static List<GenericColumn> FilterGenericColumns(List<GenericColumn> columns, List<GenericColumn> filterColumns, Dictionary<string, List<string>> dbStructure)
+        {
+            switch ( filter )
+            {
+                case Filters.Measurement:
+                    return columns.Where (p => dbStructure.ContainsKey (tableName)).ToList ();
+                case Filters.Field:
+                    return columns.Where (p => dbStructure.ContainsKey (tableName) && dbStructure[tableName].Contains (p.ColumnHeader)).ToList ();
+                case Filters.Columns:
+                    return columns.Where (p => filterColumns.Any (f => f.ColumnHeader == p.ColumnHeader)).ToList ();
+            }
+            return columns;
+        }
+
+        private async static Task<bool> ProcessGenericLine(string line, List<GenericColumn> columnHeaders, Regex pattern, HttpClient client, Uri InfluxPath)
         {
             StringBuilder content = new StringBuilder ();
             DateTime timeStamp;
@@ -672,7 +715,7 @@ namespace AdysTech.Influxer
 
                 if ( !DateTime.TryParseExact (columns[0], timeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
                     throw new FormatException ("Couldn't parse " + columns[0] + " using format " + timeFormat + ", check -timeformat argument");
-                var epoch = timeStamp.ToEpoch ();
+                var epoch = timeStamp.AddMinutes (utcOffsetMin).ToEpoch ();
 
                 double value = 0.0;
                 content.AppendFormat ("{0}", tableName);
@@ -681,10 +724,10 @@ namespace AdysTech.Influxer
                 else
                     content.Append (" ");
 
-                for ( var i = 1; i < columnCount; i++ )
+                foreach ( var c in columnHeaders )
                 {
-                    if ( Double.TryParse (columns[i], out value) )
-                        content.AppendFormat ("{0}={1:0.00},", columnHeaders[i], value);
+                    if ( Double.TryParse (columns[c.ColumnIndex], out value) )
+                        content.AppendFormat ("{0}={1:0.00},", c.ColumnHeader, value);
                 }
 
                 content.AppendFormat (" {0}\n", epoch);
