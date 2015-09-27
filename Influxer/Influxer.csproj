@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="FailureTracker.cs" />
     <Compile Include="GenericColumn.cs" />
     <Compile Include="PerfmonCounter.cs" />
     <Compile Include="Program.cs" />

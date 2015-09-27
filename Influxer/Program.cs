@@ -43,7 +43,7 @@ namespace AdysTech.Influxer
         const string TableNameSwitch = "-table";
         const string FilterSwitch = "-filter";
         const string ColumnsSwitch = "-columns";
-        const string UtcOffsetSwitch = "-gmtoffset";
+        const string UtcOffsetSwitch = "-utcoffset";
 
         private static string influxUrl;
         private static string influxDB;
@@ -151,7 +151,7 @@ namespace AdysTech.Influxer
             {
                 if ( !Enum.TryParse<FileFormats> (cmdArgs[FileFormatSwitch], true, out fileFormat) || !Enum.IsDefined (typeof (FileFormats), fileFormat) )
                 {
-                    Console.WriteLine ("Not supported format{0}!!", cmdArgs[FileFormatSwitch]);
+                    Console.WriteLine ("Not supported format {0}!!", cmdArgs[FileFormatSwitch]);
                     return 1;
                 }
             }
@@ -254,8 +254,12 @@ namespace AdysTech.Influxer
             }
             catch ( AggregateException e )
             {
-                Console.WriteLine (e.InnerException.Message);
-                Debug.WriteLine (e.InnerException.Message);
+                Console.WriteLine ("Error!! {0}:{1} - {2}", e.InnerException.GetType ().Name, e.InnerException.Message, e.InnerException.StackTrace);
+                return -1;
+            }
+            catch ( Exception e )
+            {
+                Console.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
                 return -1;
             }
             return 0;
@@ -301,6 +305,9 @@ namespace AdysTech.Influxer
                     var content = await response.Content.ReadAsStringAsync ();
                     return Regex.Matches (content, "([a-zA-Z0-9]+)").Cast<Match> ().Select (match => match.Value).SkipWhile (p => p != "values").Skip (1).ToList ();
                 }
+                else if ( response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.BadGateway || ( response.StatusCode == HttpStatusCode.InternalServerError && response.ReasonPhrase == "INKApi Error" ) ) //502 Connection refused
+                    throw new UnauthorizedAccessException ("InfluxDB needs authentication. Check uname, pwd parameters");
+
             }
             catch ( HttpRequestException e )
             {
@@ -355,6 +362,9 @@ namespace AdysTech.Influxer
                         }
                     }
                 }
+                else if ( response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.BadGateway || ( response.StatusCode == HttpStatusCode.InternalServerError && response.ReasonPhrase == "INKApi Error" ) ) //502 Connection refused
+                    throw new UnauthorizedAccessException ("InfluxDB needs authentication. Check uname, pwd parameters");
+
             }
             catch ( HttpRequestException e )
             {
@@ -384,6 +394,9 @@ namespace AdysTech.Influxer
                     var content = await response.Content.ReadAsStringAsync ();
                     return true;
                 }
+                else if ( response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.BadGateway || ( response.StatusCode == HttpStatusCode.InternalServerError && response.ReasonPhrase == "INKApi Error" ) ) //502 Connection refused
+                    throw new UnauthorizedAccessException ("InfluxDB needs authentication. Check uname, pwd parameters");
+
             }
             catch ( HttpRequestException e )
             {
@@ -431,6 +444,7 @@ namespace AdysTech.Influxer
                 var lineCount = 0;
                 var failedCount = 0;
                 StringBuilder content = new StringBuilder ();
+                var failureReasons = new Dictionary<Type, FailureTracker> ();
 
                 Stopwatch stopwatch = new Stopwatch ();
                 stopwatch.Start ();
@@ -480,35 +494,39 @@ namespace AdysTech.Influxer
                         if ( !await ProcessPerfmonLogLine (line, perfGroup, minOffset, pattern, client, influxAddress) )
                             failedCount++;
 
-                        lineCount++;
-
-                        if ( failedCount > 0 )
-                            Console.Write ("\r{0} Processed {1}, Failed - {2}                        ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount, failedCount);
-                        else
-                            Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount);
                     }
                     catch ( Exception e )
                     {
-                        Console.WriteLine (e.InnerException.Message);
-                        Debug.WriteLine (e.InnerException.Message);
-                        break;
+                        failedCount++;
+                        var type = e.GetType ();
+                        if ( failureReasons.ContainsKey (type) )
+                            failureReasons[type].Count++;
+                        else
+                            failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Count = 1, Message = e.Message });
                     }
+
+                    lineCount++;
+
+                    if ( failedCount > 0 )
+                        Console.Write ("\r{0} Processed {1}, Failed - {2}                        ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount, failedCount);
+                    else
+                        Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount);
+
                 }
-
-
-                stopwatch.Stop ();
-                //Debug.WriteLine("Done Async Processing, Time elapsed: {0}", stopwatch.Elapsed);
-
                 lineCount = 0;
                 pecrfCounters.Clear ();
-
-
-                Console.Write ("\n Done!! Processed{0}, failed to insert{1}", lineCount, failedCount);
+                stopwatch.Stop ();
+                if ( failedCount > 0 )
+                {
+                    Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1}", lineCount, failedCount);
+                    foreach ( var f in failureReasons.Values )
+                        Console.WriteLine ("{0}:{1} - {2}", f.ExceptionType, f.Message, f.Count);
+                }
             }
             catch ( Exception e )
             {
-                Console.WriteLine ("\rError Processing, Exception:{0}", e.Message);
-                Debug.WriteLine ("\rError Processing, Exception:{0}", e.Message);
+                Console.WriteLine ("\rError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
+                Console.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
                 return false;
             }
             return true;
@@ -551,73 +569,63 @@ namespace AdysTech.Influxer
         {
             StringBuilder content = new StringBuilder ();
             DateTime timeStamp;
-            try
+
+            var columns = pattern.Split (line.Replace ("\"", ""));
+            var columnCount = columns.Count ();
+
+            if ( !DateTime.TryParseExact (columns[0], timeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
+                throw new FormatException ("Couldn't parse " + columns[0] + " using format " + timeFormat + ", check -timeformat argument");
+            var epoch = timeStamp.AddMinutes (minOffset).ToEpoch ();
+
+            double value = 0.0;
+            content.Clear ();
+            var lineStartIndex = 0;
+
+            foreach ( var group in perfGroup )
             {
-                var columns = pattern.Split (line.Replace ("\"", ""));
-                var columnCount = columns.Count ();
-
-                if ( !DateTime.TryParseExact (columns[0], timeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
-                    throw new FormatException ("Couldn't parse " + columns[0] + " using format " + timeFormat + ", check -timeformat argument");
-                var epoch = timeStamp.AddMinutes (minOffset).ToEpoch ();
-
-                double value = 0.0;
-                content.Clear ();
-                var lineStartIndex = 0;
-
-                foreach ( var group in perfGroup )
+                foreach ( var hostGrp in group.GroupBy (p => p.Host) )
                 {
-                    foreach ( var hostGrp in group.GroupBy (p => p.Host) )
+                    lineStartIndex = content.Length;
+                    content.AppendFormat ("{0},Host={1}", group.Key, hostGrp.Key);
+
+                    if ( tags != null )
+                        content.AppendFormat (",{0} ", tags);
+                    else
+                        content.Append (" ");
+
+                    var useCounter = false;
+
+                    foreach ( var counter in hostGrp )
                     {
-                        lineStartIndex = content.Length;
-                        content.AppendFormat ("{0},Host={1}", group.Key, hostGrp.Key);
-
-                        if ( tags != null )
-                            content.AppendFormat (",{0} ", tags);
-                        else
-                            content.Append (" ");
-
-                        var useCounter = false;
-
-                        foreach ( var counter in hostGrp )
+                        if ( !String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value) )
                         {
-                            if ( !String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value) )
-                            {
-                                content.AppendFormat ("{0}={1:0.00},", counter.CounterName, value);
-                                useCounter = true;
+                            content.AppendFormat ("{0}={1:0.00},", counter.CounterName, value);
+                            useCounter = true;
 
-                            }
-                        }
-
-                        if ( useCounter )
-                            content.AppendFormat (" {0}\n", epoch);
-                        else
-                        {
-                            content.Length = lineStartIndex;
                         }
                     }
-                }
 
-                //each group will have an ending comma which is not needed
-                content.Replace (", ", " ");
-                //remove last \n
-                content.Remove (content.Length - 1, 1);
-                //synchronous processing
-                if ( await PostToInfluxAsync (client, InfluxPath, content.ToString ()) )
-                    return true;
-                else
-                {
-                    return false;
+                    if ( useCounter )
+                        content.AppendFormat (" {0}\n", epoch);
+                    else
+                    {
+                        content.Length = lineStartIndex;
+                    }
                 }
             }
-            catch ( UnauthorizedAccessException e )
+
+            //each group will have an ending comma which is not needed
+            content.Replace (", ", " ");
+            //remove last \n
+            content.Remove (content.Length - 1, 1);
+            //synchronous processing
+            if ( await PostToInfluxAsync (client, InfluxPath, content.ToString ()) )
+                return true;
+            else
             {
-                throw e;
+                return false;
             }
-            catch ( Exception e )
-            {
-                Debug.WriteLine (e.Message);
-            }
-            return false;
+
         }
 
         private static async Task<bool> ProcessGenericFile(string InputFileName, string tableName, HttpClient client)
@@ -627,9 +635,11 @@ namespace AdysTech.Influxer
                 StringBuilder content = new StringBuilder ();
                 var lineCount = 0;
                 var failedCount = 0;
+                Stopwatch stopwatch = new Stopwatch ();
+                stopwatch.Start ();
 
                 var influxAddress = new Uri (influxUrl + "/write?db=" + influxDB + "&precision=s");
-              
+
                 List<GenericColumn> columnHeaders;
 
                 var firstLine = File.ReadLines (InputFileName).FirstOrDefault ();
@@ -647,6 +657,9 @@ namespace AdysTech.Influxer
 
                 }
 
+                var failureReasons = new Dictionary<Type, FailureTracker> ();
+
+
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
                 foreach ( var line in File.ReadLines (InputFileName).Skip (1) )
                 {
@@ -654,29 +667,40 @@ namespace AdysTech.Influxer
                     {
                         if ( !await ProcessGenericLine (line, columnHeaders, pattern, client, influxAddress) )
                             failedCount++;
-
-                        lineCount++;
-
-                        if ( failedCount > 0 )
-                            Console.Write ("\r Processed {0}, Failed - {1}                        ", lineCount, failedCount);
-                        else
-                            Console.Write ("\r Processed {0}                          ", lineCount);
-
                     }
                     catch ( Exception e )
                     {
-                        Console.WriteLine (e.InnerException.Message);
-                        Debug.WriteLine (e.InnerException.Message);
-                        break;
+                        failedCount++;
+                        var type = e.GetType ();
+                        if ( failureReasons.ContainsKey (type) )
+                            failureReasons[type].Count++;
+                        else
+                            failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Count = 1, Message = e.Message });
                     }
+
+                    lineCount++;
+
+                    if ( failedCount > 0 )
+                        Console.Write ("\r{0} Processed {1}, Failed - {2}                        ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount, failedCount);
+                    else
+                        Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount);
+
                 }
                 lineCount = 0;
-                Console.Write ("\n Done!! Processed{0}, failed to insert{1}", lineCount, failedCount);
+
+                stopwatch.Stop ();
+                if ( failedCount > 0 )
+                {
+                    Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1}", lineCount, failedCount);
+                    foreach ( var f in failureReasons.Values )
+                        Console.WriteLine ("{0}:{1} - {2}", f.ExceptionType, f.Message, f.Count);
+                }
+
             }
             catch ( Exception e )
             {
-                Console.WriteLine ("\rError Processing, Exception:{0}", e.Message);
-                Debug.WriteLine ("\rError Processing, Exception:{0}", e.Message);
+                Console.WriteLine ("\rError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
+                Console.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
                 return false;
             }
             return true;
@@ -686,7 +710,7 @@ namespace AdysTech.Influxer
         {
             var columns = new List<GenericColumn> ();
             int index = 0;
-            columns.AddRange (pattern.Split (headerLine).Select (s => new GenericColumn () {ColumnIndex=index++, ColumnHeader = s.Replace (influxIdentifiers, "_") }));
+            columns.AddRange (pattern.Split (headerLine).Select (s => new GenericColumn () { ColumnIndex = index++, ColumnHeader = s.Replace (influxIdentifiers, "_") }));
             return columns;
         }
 
@@ -708,51 +732,41 @@ namespace AdysTech.Influxer
         {
             StringBuilder content = new StringBuilder ();
             DateTime timeStamp;
-            try
+
+            var columns = pattern.Split (line.Replace ("\"", ""));
+            var columnCount = columns.Count ();
+
+            if ( !DateTime.TryParseExact (columns[0], timeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
+                throw new FormatException ("Couldn't parse " + columns[0] + " using format " + timeFormat + ", check -timeformat argument");
+            var epoch = timeStamp.AddMinutes (utcOffsetMin).ToEpoch ();
+
+            double value = 0.0;
+            content.AppendFormat ("{0}", tableName);
+            if ( tags != null )
+                content.AppendFormat (",{0} ", tags);
+            else
+                content.Append (" ");
+
+            foreach ( var c in columnHeaders )
             {
-                var columns = pattern.Split (line.Replace ("\"", ""));
-                var columnCount = columns.Count ();
-
-                if ( !DateTime.TryParseExact (columns[0], timeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
-                    throw new FormatException ("Couldn't parse " + columns[0] + " using format " + timeFormat + ", check -timeformat argument");
-                var epoch = timeStamp.AddMinutes (utcOffsetMin).ToEpoch ();
-
-                double value = 0.0;
-                content.AppendFormat ("{0}", tableName);
-                if ( tags != null )
-                    content.AppendFormat (",{0} ", tags);
-                else
-                    content.Append (" ");
-
-                foreach ( var c in columnHeaders )
-                {
-                    if ( Double.TryParse (columns[c.ColumnIndex], out value) )
-                        content.AppendFormat ("{0}={1:0.00},", c.ColumnHeader, value);
-                }
-
-                content.AppendFormat (" {0}\n", epoch);
-                //each group will have an ending comma which is not needed
-                content.Replace (", ", " ");
-
-                //remove last \n
-                content.Remove (content.Length - 1, 1);
-                //synchronous processing
-                if ( await PostToInfluxAsync (client, InfluxPath, content.ToString ()) )
-                    return true;
-                else
-                {
-                    return false;
-                }
+                if ( Double.TryParse (columns[c.ColumnIndex], out value) )
+                    content.AppendFormat ("{0}={1:0.00},", c.ColumnHeader, value);
             }
-            catch ( UnauthorizedAccessException e )
+
+            content.AppendFormat (" {0}\n", epoch);
+            //each group will have an ending comma which is not needed
+            content.Replace (", ", " ");
+
+            //remove last \n
+            content.Remove (content.Length - 1, 1);
+            //synchronous processing
+            if ( await PostToInfluxAsync (client, InfluxPath, content.ToString ()) )
+                return true;
+            else
             {
-                throw e;
+                return false;
             }
-            catch ( Exception e )
-            {
-                Debug.WriteLine (e.Message);
-            }
-            return false;
+
         }
     }
 }
