@@ -1,5 +1,5 @@
 # Influxer
-A C# console application to parse log files (currently only Windows Perfmon format) and push data to Influx for later visualization.
+A C# console application to parse log files (currently only Windows Perfmon format) and push data to Influx for later visualization. It uses [InfluxDB.Client.Net](https://github.com/AdysTech/InfluxDB.Client.Net) to interact with Influx.
 
 [InfluxDB][1] is a very nice time series database, and is supported by many data visualizers (mainly [grafana][2]). But if you have other tools which are producing the data in csv format (mainly PerfMon in windows, or enterprise reporting tools) which are not designed for Influx era, you will have to develop own tools to pull from one tool and to push to other.
 
