@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration ("")]
 [assembly: AssemblyCompany ("Adys Tech")]
 [assembly: AssemblyProduct ("Influxer")]
-[assembly: AssemblyCopyright ("Copyright ©  2015")]
+[assembly: AssemblyCopyright ("AdysTech © 2015")]
 [assembly: AssemblyTrademark ("")]
 [assembly: AssemblyCulture ("")]
 
