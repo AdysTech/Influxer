@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http.Headers;
+using AdysTech.InfluxDB.Client.Net;
 
 namespace AdysTech.Influxer
 {
@@ -44,9 +45,11 @@ namespace AdysTech.Influxer
         const string FilterSwitch = "-filter";
         const string ColumnsSwitch = "-columns";
         const string UtcOffsetSwitch = "-utcoffset";
+        const string TimePrecisionSwitch = "-precision";
+
 
         private static string influxUrl;
-        private static string influxDB;
+        private static string influxDBName;
         private static string influxDBUserName;
         private static string influxDBPassword;
         private static string tags;
@@ -59,6 +62,7 @@ namespace AdysTech.Influxer
         private static Filters filter;
         private static string filteredColumns;
         private static int utcOffsetMin = 0;
+        private static TimePrecision timePrecision;
 
         private static char[] influxIdentifiers = new char[] { ' ', ';', '_', '(', ')', '%', '#', '.', '/', '[', ']', '{', '}', '"' };
         private static char[] whiteSpace = new char[] { '_' };
@@ -82,6 +86,7 @@ namespace AdysTech.Influxer
                 Console.WriteLine ("-filter <filter>    :   supported:measurement, field, columns.");
                 Console.WriteLine ("-columns <columns>  :   Comma seperated list of columns from input files");
                 Console.WriteLine ("-utcoffset          :   supported:measurement, field, columns.Offset in minutes to UTC. Applicable to Generic format only");
+                Console.WriteLine ("-precision          :   supported:Hours<1>,Minutes<2>,Seconds<3>,MilliSeconds<4>,MicroSeconds<5>,NanoSeconds<6>");
 
                 Console.WriteLine ("-filter-measurement or field is to restrict the input file to only measurements or fileds that already present in the database");
                 Console.WriteLine ("-filter-columns is to restrict to only few columns from the input irrespective of existing data in database");
@@ -110,7 +115,7 @@ namespace AdysTech.Influxer
 
 
             if ( cmdArgs.ContainsKey (InfluxDBSwitch) )
-                influxDB = cmdArgs[InfluxDBSwitch];
+                influxDBName = cmdArgs[InfluxDBSwitch];
             else
                 throw new Exception ("Influx DB name is a must!!");
 
@@ -209,25 +214,30 @@ namespace AdysTech.Influxer
                 utcOffsetMin = int.Parse (cmdArgs[UtcOffsetSwitch]);
             }
 
+            if ( cmdArgs.ContainsKey (TimePrecisionSwitch) )
+            {
+                if ( !Enum.TryParse<TimePrecision> (cmdArgs[TimePrecisionSwitch], true, out timePrecision) || !Enum.IsDefined (typeof (TimePrecision), timePrecision) )
+                {
+                    Console.WriteLine ("Not supported format {0}!!", cmdArgs[TimePrecisionSwitch]);
+                    return 1;
+                }
+            }
+            else
+            {
+                timePrecision = TimePrecision.Seconds;
+            }
+
             #endregion
             try
             {
                 Stopwatch stopwatch = new Stopwatch ();
                 stopwatch.Start ();
 
-                HttpClientHandler handler = new HttpClientHandler ();
-                handler.UseDefaultCredentials = true;
-                handler.PreAuthenticate = true;
-                handler.Proxy = WebRequest.DefaultWebProxy;
-                WebRequest.DefaultWebProxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+                var client = new InfluxDBClient (influxUrl, influxDBUserName, influxDBPassword);
 
-                var client = new HttpClient (handler);
-                if ( !( String.IsNullOrWhiteSpace (influxDBUserName) && String.IsNullOrWhiteSpace (influxDBPassword) ) )
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue ("Basic", Convert.ToBase64String (System.Text.ASCIIEncoding.ASCII.GetBytes (string.Format ("{0}:{1}", influxDBUserName, influxDBPassword))));
-
-                if ( !VerifyDatabaseAsync (client, influxDB).Result )
+                if ( !VerifyDatabaseAsync (client, influxDBName).Result )
                 {
-                    Console.WriteLine ("Unable to create DB {0}", influxDB);
+                    Console.WriteLine ("Unable to create DB {0}", influxDBName);
                     return -1;
                 }
 
@@ -265,177 +275,34 @@ namespace AdysTech.Influxer
             return 0;
         }
 
-        private static async Task<bool> VerifyDatabaseAsync(HttpClient client, string DBName)
-        {
-            var influxAddress = new Uri (influxUrl + "/query?");
-
-            //verify DB exists, create if not
-            var dbNames = await GetInfluxDBNamesAsync (client, influxAddress);
-            if ( dbNames == null ) return false;
-
-            if ( dbNames.Contains (DBName) )
-                return true;
-            else
-            {
-                if ( filter == Filters.Measurement || filter == Filters.Field )
-                {
-                    Console.WriteLine ("Measurement/Field filtering is not applicable for new database!!");
-                    filter = Filters.None;
-                }
-                return await CreateInfluxDBAsync (client, DBName, influxAddress);
-            }
-        }
-
-        private static async Task<List<String>> GetInfluxDBNamesAsync(HttpClient client, Uri InfluxPath)
+        private static async Task<bool> VerifyDatabaseAsync(InfluxDBClient client, string DBName)
         {
             try
             {
-                var builder = new UriBuilder (InfluxPath);
-                //builder.UserName = influxDBUserName;
-                //builder.Password = influxDBPassword;
-                builder.Query = await new FormUrlEncodedContent (new[] { 
-                    new KeyValuePair<string, string>("u",influxDBUserName) ,
-                    new KeyValuePair<string, string>("p", influxDBPassword) ,
-                    new KeyValuePair<string, string>("q", "SHOW DATABASES") 
-                    }).ReadAsStringAsync ();
-                HttpResponseMessage response = await client.GetAsync (builder.Uri);
-
-                if ( response.StatusCode == HttpStatusCode.OK )
-                {
-                    var content = await response.Content.ReadAsStringAsync ();
-                    return Regex.Matches (content, "([a-zA-Z0-9]+)").Cast<Match> ().Select (match => match.Value).SkipWhile (p => p != "values").Skip (1).ToList ();
-                }
-                else if ( response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.BadGateway || ( response.StatusCode == HttpStatusCode.InternalServerError && response.ReasonPhrase == "INKApi Error" ) ) //502 Connection refused
-                    throw new UnauthorizedAccessException ("InfluxDB needs authentication. Check uname, pwd parameters");
-
-            }
-            catch ( HttpRequestException e )
-            {
-                return null;
-            }
-            return null;
-        }
-
-        private static async Task<Dictionary<string, List<String>>> GetInfluxDBStructureAsync(HttpClient client, Uri InfluxPath, string dbName)
-        {
-            var dbStructure = new Dictionary<string, List<string>> ();
-            try
-            {
-                var builder = new UriBuilder (InfluxPath);
-                //builder.UserName = influxDBUserName;
-                //builder.Password = influxDBPassword;
-                builder.Query = await new FormUrlEncodedContent (new[] { 
-					new KeyValuePair<string, string>("u",influxDBUserName) ,
-					new KeyValuePair<string, string>("p", influxDBPassword) ,
-					new KeyValuePair<string, string>("db", dbName) ,
-					new KeyValuePair<string, string>("q", "SHOW FIELD KEYS") 
-					}).ReadAsStringAsync ();
-                HttpResponseMessage response = await client.GetAsync (builder.Uri);
-
-                if ( response.StatusCode == HttpStatusCode.OK )
-                {
-                    var content = await response.Content.ReadAsStringAsync ();
-                    var values = Regex.Matches (content, "([a-zA-Z0-9_]+)").Cast<Match> ().Select (match => match.Value).ToList ();
-                    string measurement;
-                    //one pass loop through the entries in returned structure. Each new measurement starts with "name",measurement name, "columns","fieldKey","values",list of columns
-                    //we will search for name, and once found grab measurement name, skip 3 lines, and grab column names
-                    for ( int i = 0; i < values.Count; i++ )
-                    {
-                        if ( values[i] != "name" )
-                            continue;
-                        if ( values[i] == "name" )
-                        {
-                            if ( ++i == values.Count )
-                                throw new InvalidDataException ("Invalid data returned from InfluxDB");
-                            //i is incremented
-                            measurement = values[i];
-                            dbStructure.Add (measurement, new List<string> ());
-                            for ( int j = i + 4; j < values.Count; j++ )
-                            {
-                                if ( values[j] == "name" )
-                                {
-                                    i = j - 1;
-                                    break;
-                                }
-                                dbStructure[measurement].Add (values[j]);
-                            }
-                        }
-                    }
-                }
-                else if ( response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.BadGateway || ( response.StatusCode == HttpStatusCode.InternalServerError && response.ReasonPhrase == "INKApi Error" ) ) //502 Connection refused
-                    throw new UnauthorizedAccessException ("InfluxDB needs authentication. Check uname, pwd parameters");
-
-            }
-            catch ( HttpRequestException e )
-            {
-
-            }
-
-            return dbStructure;
-        }
-
-
-        private static async Task<bool> CreateInfluxDBAsync(HttpClient client, string dbName, Uri InfluxPath)
-        {
-            try
-            {
-                var builder = new UriBuilder (InfluxPath);
-                //builder.UserName = influxDBUserName;
-                //builder.Password = influxDBPassword;
-                builder.Query = await new FormUrlEncodedContent (new[] { 
-                    new KeyValuePair<string, string>("u",influxDBUserName) ,
-                    new KeyValuePair<string, string>("p", influxDBPassword) ,
-                    new KeyValuePair<string, string>("q", "CREATE DATABASE "+ dbName) 
-                    }).ReadAsStringAsync ();
-                HttpResponseMessage response = await client.GetAsync (builder.Uri);
-
-                if ( response.StatusCode == HttpStatusCode.OK )
-                {
-                    var content = await response.Content.ReadAsStringAsync ();
+                //verify DB exists, create if not
+                var dbNames = await client.GetInfluxDBNamesAsync ();
+                if ( dbNames.Contains (DBName) )
                     return true;
+                else
+                {
+                    if ( filter == Filters.Measurement || filter == Filters.Field )
+                    {
+                        Console.WriteLine ("Measurement/Field filtering is not applicable for new database!!");
+                        filter = Filters.None;
+                    }
+                    return await client.CreateDatabaseAsync (DBName);
                 }
-                else if ( response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.BadGateway || ( response.StatusCode == HttpStatusCode.InternalServerError && response.ReasonPhrase == "INKApi Error" ) ) //502 Connection refused
-                    throw new UnauthorizedAccessException ("InfluxDB needs authentication. Check uname, pwd parameters");
-
             }
-            catch ( HttpRequestException e )
+            catch ( Exception e )
             {
-                return false;
+                Console.WriteLine ("Unexpected exception of type {0} caught: {1}",
+                            e.GetType (), e.Message);
             }
             return false;
         }
 
 
-        private static async Task<bool> PostToInfluxAsync(HttpClient client, Uri InfluxPath, string content)
-        {
-            ByteArrayContent requestContent = new ByteArrayContent (Encoding.UTF8.GetBytes (content));
-            try
-            {
-                HttpResponseMessage response = await client.PostAsync (InfluxPath, requestContent);
-
-                if ( response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.BadGateway || ( response.StatusCode == HttpStatusCode.InternalServerError && response.ReasonPhrase == "INKApi Error" ) ) //502 Connection refused
-                    throw new UnauthorizedAccessException ("InfluxDB needs authentication. Check uname, pwd parameters");
-                //if(response.StatusCode==HttpStatusCode.NotFound)
-
-                else if ( response.StatusCode == HttpStatusCode.NoContent )
-                    return true;
-                else
-                    return false;
-            }
-            catch ( HttpRequestException ex )
-            {
-                return false;
-            }
-            catch ( Exception e )
-            {
-                if ( e is UnauthorizedAccessException )
-                    throw e;
-                return false;
-            }
-
-        }
-
-        private static async Task<bool> ProcessPerfMonLog(string InputFileName, HttpClient client)
+        private static async Task<bool> ProcessPerfMonLog(string InputFileName, InfluxDBClient client)
         {
 
             try
@@ -448,8 +315,6 @@ namespace AdysTech.Influxer
 
                 Stopwatch stopwatch = new Stopwatch ();
                 stopwatch.Start ();
-
-                var influxAddress = new Uri (influxUrl + "/write?db=" + influxDB + "&precision=s");
 
 
                 var firstLine = File.ReadLines (InputFileName).FirstOrDefault ();
@@ -478,7 +343,7 @@ namespace AdysTech.Influxer
                 IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup;
                 if ( filter != Filters.None )
                 {
-                    dbStructure = await GetInfluxDBStructureAsync (client, new Uri (influxUrl + "/query?"), influxDB);
+                    dbStructure = await client.GetInfluxDBStructureAsync (influxDBName);
                     perfGroup = FilterPerfmonLogColumns (pecrfCounters, filterColumns, dbStructure).GroupBy (p => p.PerformanceObject);
                 }
                 else
@@ -491,7 +356,7 @@ namespace AdysTech.Influxer
                 {
                     try
                     {
-                        if ( !await ProcessPerfmonLogLine (line, perfGroup, minOffset, pattern, client, influxAddress) )
+                        if ( !await ProcessPerfmonLogLine (line, perfGroup, minOffset, pattern, client) )
                             failedCount++;
 
                     }
@@ -565,7 +430,7 @@ namespace AdysTech.Influxer
             return columns;
         }
 
-        private static async Task<bool> ProcessPerfmonLogLine(string line, IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup, int minOffset, Regex pattern, HttpClient client, Uri InfluxPath)
+        private static async Task<bool> ProcessPerfmonLogLine(string line, IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup, int minOffset, Regex pattern, InfluxDBClient client)
         {
             StringBuilder content = new StringBuilder ();
             DateTime timeStamp;
@@ -575,7 +440,7 @@ namespace AdysTech.Influxer
 
             if ( !DateTime.TryParseExact (columns[0], timeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
                 throw new FormatException ("Couldn't parse " + columns[0] + " using format " + timeFormat + ", check -timeformat argument");
-            var epoch = timeStamp.AddMinutes (minOffset).ToEpoch ();
+            var epoch = timeStamp.AddMinutes (minOffset).ToEpoch (timePrecision);
 
             double value = 0.0;
             content.Clear ();
@@ -619,7 +484,7 @@ namespace AdysTech.Influxer
             //remove last \n
             content.Remove (content.Length - 1, 1);
             //synchronous processing
-            if ( await PostToInfluxAsync (client, InfluxPath, content.ToString ()) )
+            if ( await client.PostRawValueAsync (influxDBName, TimePrecision.Seconds, content.ToString ()) )
                 return true;
             else
             {
@@ -628,7 +493,7 @@ namespace AdysTech.Influxer
 
         }
 
-        private static async Task<bool> ProcessGenericFile(string InputFileName, string tableName, HttpClient client)
+        private static async Task<bool> ProcessGenericFile(string InputFileName, string tableName, InfluxDBClient client)
         {
             try
             {
@@ -638,21 +503,17 @@ namespace AdysTech.Influxer
                 Stopwatch stopwatch = new Stopwatch ();
                 stopwatch.Start ();
 
-                var influxAddress = new Uri (influxUrl + "/write?db=" + influxDB + "&precision=s");
-
                 List<GenericColumn> columnHeaders;
 
                 var firstLine = File.ReadLines (InputFileName).FirstOrDefault ();
-                var index = 0;
                 columnHeaders = ParseGenericColumns (firstLine);
 
                 Dictionary<string, List<string>> dbStructure;
-                IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup;
                 if ( filter != Filters.None )
                 {
                     var filterColumns = ParseGenericColumns (filteredColumns);
 
-                    dbStructure = await GetInfluxDBStructureAsync (client, new Uri (influxUrl + "/query?"), influxDB);
+                    dbStructure = await client.GetInfluxDBStructureAsync (influxDBName);
                     columnHeaders = FilterGenericColumns (columnHeaders, filterColumns, dbStructure);
 
                 }
@@ -665,7 +526,7 @@ namespace AdysTech.Influxer
                 {
                     try
                     {
-                        if ( !await ProcessGenericLine (line, columnHeaders, pattern, client, influxAddress) )
+                        if ( !await ProcessGenericLine (line, columnHeaders, pattern, client) )
                             failedCount++;
                     }
                     catch ( Exception e )
@@ -728,9 +589,11 @@ namespace AdysTech.Influxer
             return columns;
         }
 
-        private async static Task<bool> ProcessGenericLine(string line, List<GenericColumn> columnHeaders, Regex pattern, HttpClient client, Uri InfluxPath)
+        private async static Task<bool> ProcessGenericLine(string line, List<GenericColumn> columnHeaders, Regex pattern, InfluxDBClient client)
         {
-            StringBuilder content = new StringBuilder ();
+            Dictionary<string, double> values = new Dictionary<string, double> ();
+            StringBuilder tagsCollection = new StringBuilder ();
+
             DateTime timeStamp;
 
             var columns = pattern.Split (line.Replace ("\"", ""));
@@ -738,29 +601,27 @@ namespace AdysTech.Influxer
 
             if ( !DateTime.TryParseExact (columns[0], timeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
                 throw new FormatException ("Couldn't parse " + columns[0] + " using format " + timeFormat + ", check -timeformat argument");
-            var epoch = timeStamp.AddMinutes (utcOffsetMin).ToEpoch ();
+            var epoch = timeStamp.AddMinutes (utcOffsetMin).ToEpoch (timePrecision);
 
             double value = 0.0;
-            content.AppendFormat ("{0}", tableName);
-            if ( tags != null )
-                content.AppendFormat (",{0} ", tags);
-            else
-                content.Append (" ");
-
-            foreach ( var c in columnHeaders )
+        
+            foreach ( var c in columnHeaders.Skip(1) )
             {
                 if ( Double.TryParse (columns[c.ColumnIndex], out value) )
-                    content.AppendFormat ("{0}={1:0.00},", c.ColumnHeader, value);
+                {
+                    values.Add (c.ColumnHeader, Math.Round(value,2));
+                    //break;
+                }
+                else
+                    tagsCollection.AppendFormat ("{0}={1},", c.ColumnHeader, columns[c.ColumnIndex].Replace (influxIdentifiers, "_"));
             }
 
-            content.AppendFormat (" {0}\n", epoch);
-            //each group will have an ending comma which is not needed
-            content.Replace (", ", " ");
+            if ( tags != null )
+                tagsCollection.Append (tags);
+            else
+                tagsCollection.Remove (tagsCollection.Length - 1, 1);
 
-            //remove last \n
-            content.Remove (content.Length - 1, 1);
-            //synchronous processing
-            if ( await PostToInfluxAsync (client, InfluxPath, content.ToString ()) )
+            if ( await client.PostValuesAsync (influxDBName, tableName, epoch, timePrecision, tagsCollection.ToString (), values) )
                 return true;
             else
             {
