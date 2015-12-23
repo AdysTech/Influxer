@@ -9,7 +9,13 @@ namespace AdysTech.Influxer
     class FailureTracker
     {
         public Type ExceptionType { get; set; }
-        public int Count { get; set; }
+        public int Count { get { return LineNumbers.Count; } }
         public string Message { get; set; }
+        public List<int> LineNumbers { get; private set; }
+        public FailureTracker()
+        {
+            LineNumbers = new List<int> ();
+        }
     }
+
 }

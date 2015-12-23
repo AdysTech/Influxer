@@ -67,6 +67,17 @@ namespace AdysTech.Influxer
         private static char[] influxIdentifiers = new char[] { ' ', ';', '_', '(', ')', '%', '#', '.', '/', '[', ']', '{', '}', '"' };
         private static char[] whiteSpace = new char[] { '_' };
 
+
+        enum ExitCode : int
+        {
+            Success = 0,
+            InvalidArgument = 1,
+            InvalidFilename = 2,
+            UnableToProcess = 3,
+            ProcessedWithErrors = 4,
+            UnknownError = 10
+        }
+
         static int Main(string[] args)
         {
             #region Command Line argument processing
@@ -91,13 +102,13 @@ namespace AdysTech.Influxer
                 Console.WriteLine ("-filter-measurement or field is to restrict the input file to only measurements or fileds that already present in the database");
                 Console.WriteLine ("-filter-columns is to restrict to only few columns from the input irrespective of existing data in database");
                 Console.WriteLine ("-columns will be ignored in other cases. Replace any inline commas in columns names with a space!");
-                return 0;
+                return (int)ExitCode.Success;
             }
 
             if ( args.Length == 0 || args.Length % 2 != 0 )
             {
                 Console.WriteLine ("Command line arguments not valid, try --help to see valid ones!");
-                return -1;
+                return (int) ExitCode.InvalidArgument;
             }
 
             Dictionary<string, string> cmdArgs = new Dictionary<string, string> ();
@@ -133,7 +144,7 @@ namespace AdysTech.Influxer
                 }
                 catch ( Exception e )
                 {
-                    Console.WriteLine ("Error with report file:{0},{1}", e.GetType ().Name, e.Message);
+                    Console.Error.WriteLine ("Error with report file:{0},{1}", e.GetType ().Name, e.Message);
                 }
             }
             else
@@ -157,7 +168,7 @@ namespace AdysTech.Influxer
                 if ( !Enum.TryParse<FileFormats> (cmdArgs[FileFormatSwitch], true, out fileFormat) || !Enum.IsDefined (typeof (FileFormats), fileFormat) )
                 {
                     Console.WriteLine ("Not supported format {0}!!", cmdArgs[FileFormatSwitch]);
-                    return 1;
+                    return (int) ExitCode.InvalidArgument;
                 }
             }
             else
@@ -170,7 +181,7 @@ namespace AdysTech.Influxer
                 if ( !Enum.TryParse<Filters> (cmdArgs[FilterSwitch], true, out filter) || !Enum.IsDefined (typeof (Filters), filter) )
                 {
                     Console.WriteLine ("Not supported filter:{0}!!", cmdArgs[FilterSwitch]);
-                    return 1;
+                    return (int) ExitCode.InvalidArgument;
                 }
             }
             else
@@ -183,12 +194,12 @@ namespace AdysTech.Influxer
                 if ( filter != Filters.Columns )
                 {
                     Console.WriteLine ("Column filtering is supported only with -filter Columns!!");
-                    return 1;
+                    return (int) ExitCode.InvalidArgument;
                 }
                 if ( String.IsNullOrWhiteSpace (cmdArgs[ColumnsSwitch]) )
                 {
                     Console.WriteLine ("Invalid Column filter!!");
-                    return 1;
+                    return (int) ExitCode.InvalidArgument;
                 }
 
                 filteredColumns = cmdArgs[ColumnsSwitch];
@@ -199,13 +210,13 @@ namespace AdysTech.Influxer
                         ( fileFormat == FileFormats.Generic && ParseGenericColumns (filteredColumns).Count == 0 ) )
                     {
                         Console.WriteLine ("No columns filtered!!");
-                        return 1;
+                        return (int) ExitCode.InvalidArgument;
                     }
                 }
                 catch ( Exception e )
                 {
                     Console.WriteLine ("Unable to parse column filters");
-                    return 1;
+                    return (int) ExitCode.InvalidArgument;
                 }
             }
 
@@ -219,7 +230,7 @@ namespace AdysTech.Influxer
                 if ( !Enum.TryParse<TimePrecision> (cmdArgs[TimePrecisionSwitch], true, out timePrecision) || !Enum.IsDefined (typeof (TimePrecision), timePrecision) )
                 {
                     Console.WriteLine ("Not supported format {0}!!", cmdArgs[TimePrecisionSwitch]);
-                    return 1;
+                    return (int) ExitCode.InvalidArgument;
                 }
             }
             else
@@ -228,6 +239,7 @@ namespace AdysTech.Influxer
             }
 
             #endregion
+            ExitCode result = ExitCode.UnknownError;
             try
             {
                 Stopwatch stopwatch = new Stopwatch ();
@@ -238,10 +250,8 @@ namespace AdysTech.Influxer
                 if ( !VerifyDatabaseAsync (client, influxDBName).Result )
                 {
                     Console.WriteLine ("Unable to create DB {0}", influxDBName);
-                    return -1;
+                    return (int) ExitCode.UnableToProcess;
                 }
-
-                var result = false;
                 switch ( fileFormat )
                 {
                     case FileFormats.Perfmon:
@@ -255,24 +265,20 @@ namespace AdysTech.Influxer
                 }
 
                 stopwatch.Stop ();
-                if ( result )
-                {
-                    Console.WriteLine ("\n Finished!! Processed in {0}", stopwatch.Elapsed.ToString ());
-                    return 0;
-                }
+                Console.WriteLine ("\n Finished!! Processed in {0}", stopwatch.Elapsed.ToString ());
 
             }
+
             catch ( AggregateException e )
             {
-                Console.WriteLine ("Error!! {0}:{1} - {2}", e.InnerException.GetType ().Name, e.InnerException.Message, e.InnerException.StackTrace);
-                return -1;
+                Console.Error.WriteLine ("Error!! {0}:{1} - {2}", e.InnerException.GetType ().Name, e.InnerException.Message, e.InnerException.StackTrace);
             }
+
             catch ( Exception e )
             {
-                Console.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
-                return -1;
+                Console.Error.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
             }
-            return 0;
+            return (int) result;
         }
 
         private static async Task<bool> VerifyDatabaseAsync(InfluxDBClient client, string DBName)
@@ -302,7 +308,7 @@ namespace AdysTech.Influxer
         }
 
 
-        private static async Task<bool> ProcessPerfMonLog(string InputFileName, InfluxDBClient client)
+        private static async Task<ExitCode> ProcessPerfMonLog(string InputFileName, InfluxDBClient client)
         {
 
             try
@@ -354,6 +360,7 @@ namespace AdysTech.Influxer
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
                 foreach ( var line in File.ReadLines (InputFileName).Skip (1) )
                 {
+                    lineCount++;
                     try
                     {
                         if ( !await ProcessPerfmonLogLine (line, perfGroup, minOffset, pattern, client) )
@@ -364,13 +371,10 @@ namespace AdysTech.Influxer
                     {
                         failedCount++;
                         var type = e.GetType ();
-                        if ( failureReasons.ContainsKey (type) )
-                            failureReasons[type].Count++;
-                        else
-                            failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Count = 1, Message = e.Message });
+                        if ( !failureReasons.ContainsKey (type) )
+                            failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Message = e.Message });
+                        failureReasons[type].LineNumbers.Add (lineCount);
                     }
-
-                    lineCount++;
 
                     if ( failedCount > 0 )
                         Console.Write ("\r{0} Processed {1}, Failed - {2}                        ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount, failedCount);
@@ -385,16 +389,19 @@ namespace AdysTech.Influxer
                 {
                     Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1}", lineCount, failedCount);
                     foreach ( var f in failureReasons.Values )
-                        Console.WriteLine ("{0}:{1} - {2}", f.ExceptionType, f.Message, f.Count);
+                        Console.WriteLine ("{0}:{1} - {2} : {3}", f.ExceptionType, f.Message, f.Count, String.Join (",", f.LineNumbers));
+                    if ( failedCount == lineCount )
+                        return ExitCode.UnableToProcess;
+                    else
+                        return ExitCode.ProcessedWithErrors;
                 }
             }
             catch ( Exception e )
             {
-                Console.WriteLine ("\rError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
-                Console.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
-                return false;
+                Console.Error.WriteLine ("\r\nError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
+                return ExitCode.UnknownError;
             }
-            return true;
+            return ExitCode.Success;
         }
 
         private static List<PerfmonCounter> ParsePerfMonFileHeader(string headerLine, bool quoted = true)
@@ -493,7 +500,7 @@ namespace AdysTech.Influxer
 
         }
 
-        private static async Task<bool> ProcessGenericFile(string InputFileName, string tableName, InfluxDBClient client)
+        private static async Task<ExitCode> ProcessGenericFile(string InputFileName, string tableName, InfluxDBClient client)
         {
             try
             {
@@ -533,10 +540,9 @@ namespace AdysTech.Influxer
                     {
                         failedCount++;
                         var type = e.GetType ();
-                        if ( failureReasons.ContainsKey (type) )
-                            failureReasons[type].Count++;
-                        else
-                            failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Count = 1, Message = e.Message });
+                        if ( !failureReasons.ContainsKey (type) )
+                            failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Message = e.Message });
+                        failureReasons[type].LineNumbers.Add (lineCount);
                     }
 
                     lineCount++;
@@ -554,17 +560,20 @@ namespace AdysTech.Influxer
                 {
                     Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1}", lineCount, failedCount);
                     foreach ( var f in failureReasons.Values )
-                        Console.WriteLine ("{0}:{1} - {2}", f.ExceptionType, f.Message, f.Count);
+                        Console.WriteLine ("{0}:{1} - {2} : {3}", f.ExceptionType, f.Message, f.Count, String.Join (",", f.LineNumbers));
+                    if ( failedCount == lineCount )
+                        return ExitCode.UnableToProcess;
+                    else
+                        return ExitCode.ProcessedWithErrors;
                 }
 
             }
             catch ( Exception e )
             {
-                Console.WriteLine ("\rError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
-                Console.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
-                return false;
+                Console.Error.WriteLine ("\r\nError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
+                return ExitCode.UnknownError;
             }
-            return true;
+            return ExitCode.Success;
         }
 
         private static List<GenericColumn> ParseGenericColumns(string headerLine)
@@ -604,12 +613,12 @@ namespace AdysTech.Influxer
             var epoch = timeStamp.AddMinutes (utcOffsetMin).ToEpoch (timePrecision);
 
             double value = 0.0;
-        
-            foreach ( var c in columnHeaders.Skip(1) )
+
+            foreach ( var c in columnHeaders.Skip (1) )
             {
                 if ( Double.TryParse (columns[c.ColumnIndex], out value) )
                 {
-                    values.Add (c.ColumnHeader, Math.Round(value,2));
+                    values.Add (c.ColumnHeader, Math.Round (value, 2));
                     //break;
                 }
                 else
