@@ -5,6 +5,7 @@ A C# console application to parse log files (currently only Windows Perfmon form
 
 Meet Influxer, a small C# console application, which will take any generic csv file or standard PerfMon csv log, and upload it to any Influx instance.
 
+<<<<<<< HEAD
         Valid switches are
     -influx <url>       :   Influx DB Url
     -dbName <name>      :   Influx DB Name (will be created if not exists)
@@ -21,6 +22,43 @@ Meet Influxer, a small C# console application, which will take any generic csv f
     -filter-measurement or field is to restrict the input file to only measurements or fields that already present in the database
     -filter-columns is to restrict to only few columns from the input irrespective of existing data in database
     -columns will be ignored in other cases. Replace any inline commas in columns names with a space!
+=======
+    Supported command line arguments
+    --help /? or /help  shows this help text
+    
+    
+    /config to print possible config section, pipe it to a file to edit and reuse the config
+    
+    -config <configuration file path> to load the config file.
+    
+    Any configuration entries can be overridden by command line switches shown below
+    
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Required flags
+    -input <file name>                                      Input file name
+    -format <format>                                        Input file format. Supported: Perfmon, Generic                                                           Default:Perfmon
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    InfluxDB related flags
+    -influx <Url>                                           Influx DB Url including port                                                                             Default:localhost:8083
+    -dbName <name>                                          Influx database Name, will be created if not present                                                     Default:InfluxerDB
+    -uname <username>                                       User name for InfluxDB
+    -pass <password>                                        Password for InfluxDB
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Perfmon file format related flags
+    -seperator <char>                                       Charecter seperating Columns                                                                             Default:,
+    -TimeFormat <format>                                    Time format used in input files                                                                          Default:MM/dd/yyyy hh:mm:ss.fff
+    -Precision <precision>                                  Supported:Hours<1>,Minutes<2>,Seconds<3>,MilliSeconds<4>,MicroSeconds<5>,NanoSeconds<6>                  Default:Seconds
+    -filter <filter>                                        Filter input data file, Supported:Measurement (import preexisting measurements), Field (import preexisting fields), Columns (import specified columns)
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Generic delimited file format related flags
+    -table <table name>                                     Measurement name in InfluxDB                                                                             Default:InfluxerData
+    -utcoffset <No of Minutes>                              Offset in minutes to UTC, each line in input will be adjusted to arrive time in UTC
+    -seperator <char>                                       Charecter seperating Columns                                                                             Default:,
+    -TimeFormat <format>                                    Time format used in input files                                                                          Default:MM/dd/yyyy hh:mm:ss.fff
+    -Precision <precision>                                  Supported:Hours<1>,Minutes<2>,Seconds<3>,MilliSeconds<4>,MicroSeconds<5>,NanoSeconds<6>                  Default:Seconds
+    -filter <filter>                                        Filter input data file, Supported:Measurement (import preexisting measurements), Field (import preexisting fields), Columns (import specified columns)
+
+>>>>>>> mvadu-patch-1
 
 In case of Perfmon logs, the measurements are created at a CounterObject level, and each counters in those objects become fields. The Host name is added as tag. 
 

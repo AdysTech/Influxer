@@ -8,7 +8,15 @@ namespace AdysTech.Influxer
 {
     class GenericColumn
     {
+        public enum ColumnDataType : int
+        {
+            Unknown = 0,
+            Tag,
+            Field
+        }
+
         public int ColumnIndex { get; set; }
         public string ColumnHeader { get; set; }
+        public ColumnDataType Type { get; set; }
     }
 }
