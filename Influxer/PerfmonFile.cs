@@ -128,9 +128,9 @@ namespace AdysTech.Influxer
                         Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount);
 
                 }
-
-                if ( await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points) )
-                    points.Clear ();
+                if ( points != null )
+                    if ( await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points) )
+                        points.Clear ();
 
                 pecrfCounters.Clear ();
                 stopwatch.Stop ();
@@ -138,7 +138,7 @@ namespace AdysTech.Influxer
                 {
                     Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1} lines, Total Points: {2}", lineCount, failedCount, pointCount);
                     foreach ( var f in failureReasons.Values )
-                        Console.WriteLine ("{0}:{1} - {2} : {3}", f.ExceptionType, f.Message, f.Count, String.Join (",", f.LineNumbers));
+                        Console.Error.WriteLine ("{0} lines ({1}) failed due to {2} ({3})", f.Count, String.Join (",", f.LineNumbers), f.ExceptionType, f.Message);
                     if ( failedCount == lineCount )
                         return ExitCode.UnableToProcess;
                     else

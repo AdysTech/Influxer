@@ -108,7 +108,7 @@ namespace AdysTech.Influxer
                 {
                     Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1}", lineCount, failedCount);
                     foreach ( var f in failureReasons.Values )
-                        Console.WriteLine ("{0}:{1} - {2} : {3}", f.ExceptionType, f.Message, f.Count, String.Join (",", f.LineNumbers));
+                        Console.Error.WriteLine ("{0} lines ({1}) failed due to {2} ({3})", f.Count, String.Join (",", f.LineNumbers), f.ExceptionType, f.Message);
                     if ( failedCount == lineCount )
                         return ExitCode.UnableToProcess;
                     else
