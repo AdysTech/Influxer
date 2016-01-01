@@ -34,7 +34,6 @@ namespace AdysTech.Influxer
     {
 
         private static InfluxerConfigSection settings;
-        private static Regex pattern;
 
         static int Main(string[] args)
         {
@@ -172,13 +171,7 @@ namespace AdysTech.Influxer
                 return (int) ExitCode.InvalidArgument;
             }
 
-            pattern = new Regex (settings.FileFormat == FileFormats.Perfmon ? settings.PerfmonFile.ColumnDelimiter : settings.GenericFile.ColumnDelimiter
-                                + "(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", RegexOptions.Compiled);
-
-
-
             #endregion
-
 
             ExitCode result = ExitCode.UnknownError;
             try
