@@ -73,7 +73,9 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="FailureTracker.cs" />
     <Compile Include="GenericColumn.cs" />
+    <Compile Include="GenericFile.cs" />
     <Compile Include="PerfmonCounter.cs" />
+    <Compile Include="PerfmonFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

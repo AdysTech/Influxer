@@ -19,8 +19,16 @@ namespace AdysTech.Influxer.Config
             set { this["ColumnDelimiter"] = value; }
         }
 
-        [CommandLineArgAttribute ("-timeformat", Usage = "-TimeFormat <format>", Description = "Time format used in input files", DefaultValue = "MM/dd/yyyy hh:mm:ss.fff")]
-        [ConfigurationProperty ("TimeFormat", DefaultValue = "MM/dd/yyyy hh:mm:ss.fff")]
+        [CommandLineArgAttribute ("-splitter", Usage = "-splitter <regex>", Description = "RegEx used for splitting rows into columns", DefaultValue = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")]
+        [ConfigurationProperty ("ColumnSplitter", DefaultValue = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")]
+        public string ColumnSplitter
+        {
+            get { return (string) this["ColumnSplitter"]; }
+            set { this["ColumnSplitter"] = value; }
+        }
+
+        [CommandLineArgAttribute ("-timeformat", Usage = "-TimeFormat <format>", Description = "Time format used in input files", DefaultValue = "MM/dd/yyyy HH:mm:ss.fff")]
+        [ConfigurationProperty ("TimeFormat", DefaultValue = "MM/dd/yyyy HH:mm:ss.fff")]
         public string TimeFormat
         {
             get { return (string) this["TimeFormat"]; }

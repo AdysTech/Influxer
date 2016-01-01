@@ -14,13 +14,15 @@ namespace AdysTech.Influxer.Config
 
         public bool ProcessCommandLineArguments(Dictionary<string, string> CommandLine)
         {
-            bool found = false;
+            bool found = false, ret = false;
             foreach ( var prop in this.GetType ().GetProperties () )
             {
+                if ( CommandLine.Count == 0 ) break;
+
                 var cmdAttribute = prop.GetCustomAttributes (typeof (CommandLineArgAttribute), true).FirstOrDefault () as CommandLineArgAttribute;
                 if ( cmdAttribute != null )
                 {
-                    if ( CommandLine.ContainsKey (cmdAttribute.Argument.ToLower()) )
+                    if ( CommandLine.ContainsKey (cmdAttribute.Argument.ToLower ()) )
                     {
                         found = true;
                         try
@@ -34,10 +36,12 @@ namespace AdysTech.Influxer.Config
                         CommandLine.Remove (cmdAttribute.Argument);
                     }
                 }
-                if ( prop.GetType ().GetInterfaces ().Contains (typeof (IOverridableConfig)) )
+                if ( CommandLine.Count > 0 && prop.GetType ().GetInterfaces ().Contains (typeof (IOverridableConfig)) )
                 {
-                    found = ( prop as IOverridableConfig ).ProcessCommandLineArguments (CommandLine);
+                    ret = ( prop as IOverridableConfig ).ProcessCommandLineArguments (CommandLine);
+                    found = !found ? ret : found;
                 }
+
             }
             return found;
         }
@@ -55,10 +59,10 @@ namespace AdysTech.Influxer.Config
                         help.AppendFormat ("\t Default:{0,-40}\n", cmdAttribute.DefaultValue);
                     else
                         help.Append ("\n");
-                } 
+                }
                 if ( prop.GetType ().GetInterfaces ().Contains (typeof (IOverridableConfig)) )
                 {
-                    help.Append( ( prop as IOverridableConfig ).PrintHelpText());
+                    help.Append (( prop as IOverridableConfig ).PrintHelpText ());
                 }
             }
             return help.ToString ();

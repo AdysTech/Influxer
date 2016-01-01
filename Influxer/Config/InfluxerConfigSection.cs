@@ -68,13 +68,18 @@ namespace AdysTech.Influxer.Config
 
         public bool ProcessCommandLineArguments(Dictionary<string, string> CommandLine)
         {
+            if ( CommandLine == null || CommandLine.Count == 0 ) return true;
+
             bool found = false;
             foreach ( var prop in this.GetType ().GetProperties () )
             {
+                if ( CommandLine.Count == 0 )
+                    break;
+
                 var cmdAttribute = prop.GetCustomAttributes (typeof (CommandLineArgAttribute), true).FirstOrDefault () as CommandLineArgAttribute;
                 if ( cmdAttribute != null )
                 {
-                    if ( CommandLine.ContainsKey (cmdAttribute.Argument.ToLower ()) )
+                    if ( CommandLine.ContainsKey (cmdAttribute.Argument) )
                     {
                         found = true;
                         try
@@ -90,13 +95,21 @@ namespace AdysTech.Influxer.Config
                 }
             }
 
-            found = InfluxDB.ProcessCommandLineArguments (CommandLine);
-            if ( FileFormat == FileFormats.Perfmon )
-                found = PerfmonFile.ProcessCommandLineArguments (CommandLine);
-            else
-                found = GenericFile.ProcessCommandLineArguments (CommandLine);
+            if ( CommandLine.Count == 0 )
+                return found;
+            bool ret;
+            ret = InfluxDB.ProcessCommandLineArguments (CommandLine);
+            if ( CommandLine.Count == 0 )
+                return !found ? ret : found;
+            
+            found = !found ? ret : found;
 
-            return found;
+            if ( FileFormat == FileFormats.Perfmon )
+                ret = PerfmonFile.ProcessCommandLineArguments (CommandLine);
+            else
+                ret = GenericFile.ProcessCommandLineArguments (CommandLine);
+
+            return !found ? ret : found; 
         }
 
         public string PrintHelpText()
@@ -130,8 +143,19 @@ namespace AdysTech.Influxer.Config
 
         #endregion
 
-        private bool _loaded = false;
         private static InfluxerConfigSection _instance;
+
+        /// <summary>
+        /// Returns currently loaded configuration or default one if nothing is loaded
+        /// </summary>
+        /// <returns></returns>
+        public static InfluxerConfigSection GetCurrentOrDefault()
+        {
+            if ( _instance == null )
+                return LoadDefault ();
+            else
+                return _instance;
+        }
 
         /// <summary>
         /// Returns default configuration settings for the application
@@ -143,19 +167,29 @@ namespace AdysTech.Influxer.Config
             return _instance;
         }
 
+
+        /// <summary>
+        /// Loads the configuration into application from the file passed.
+        /// </summary>
+        /// <param name="path">Path to the file which contains valid configuration entries. Without InfluxerConfiguration section will raise an exception</param>
+        /// <returns>InfluxerConfigSection created based on entries in config file</returns>
         public static InfluxerConfigSection Load(string path)
         {
             if ( _instance == null )
             {
-                if ( path.EndsWith (".config",
-                        StringComparison.InvariantCultureIgnoreCase) )
-                    path = path.Remove (path.Length - 7);
-                Configuration config =
-                        ConfigurationManager.OpenExeConfiguration (path);
+                //if ( path.EndsWith (".config",
+                //        StringComparison.InvariantCultureIgnoreCase) )
+                //    path = path.Remove (path.Length - 7);
+                //Configuration config =
+                //        ConfigurationManager.OpenExeConfiguration (path);
+
+                ExeConfigurationFileMap configMap = new ExeConfigurationFileMap ();
+                configMap.ExeConfigFilename = path;
+                Configuration config = ConfigurationManager.OpenMappedExeConfiguration (configMap, ConfigurationUserLevel.None);
+
                 if ( config.Sections["InfluxerConfiguration"] != null )
                 {
                     _instance = (InfluxerConfigSection) config.Sections["InfluxerConfiguration"];
-                    _instance._loaded = true;
                 }
                 else
                 {
@@ -165,14 +199,17 @@ namespace AdysTech.Influxer.Config
             return _instance;
         }
 
+        /// <summary>
+        /// Copies configuration entries into the stream
+        /// </summary>
+        /// <param name="outStream">Stream which can be written by current actor</param>
+        /// <param name="defaultValues">True to generate default settings, false to generate entries matching current values, which might be due to a commandline override</param>
+        /// <returns>true: if successful, false otherwise</returns>
         public static bool Export(Stream outStream, bool defaultValues = false)
         {
             var tmpFile = System.IO.Path.GetTempFileName ();
             try
             {
-                //ExeConfigurationFileMap configMap = new ExeConfigurationFileMap ();
-                //configMap.ExeConfigFilename = tmpFile;
-                //Configuration config = ConfigurationManager.OpenMappedExeConfiguration (configMap, ConfigurationUserLevel.None);
                 var config = ConfigurationManager.OpenExeConfiguration (ConfigurationUserLevel.None);
                 config.Sections.Add ("InfluxerConfiguration", defaultValues ? new InfluxerConfigSection () : _instance);
                 config.Sections["InfluxerConfiguration"].SectionInformation.ForceSave = true;

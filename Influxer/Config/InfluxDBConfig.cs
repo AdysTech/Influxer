@@ -42,6 +42,14 @@ namespace AdysTech.Influxer.Config
             set { this["Password"] = value; }
         }
 
+        [CommandLineArgAttribute ("-batch", Usage = "-batch <number of points>", Description = "No of points to send to InfluxDB in one request", DefaultValue = "128")]
+        [ConfigurationProperty ("PointsInSingleBatch", DefaultValue = 128)]
+        public int PointsInSingleBatch
+        {
+            get { return (int) this["PointsInSingleBatch"]; }
+            set { this["PointsInSingleBatch"] = value; }
+        }
+
         [ConfigurationProperty ("InfluxReserved")]
         public InfluxIdentifiers InfluxReserved
         {
@@ -52,14 +60,14 @@ namespace AdysTech.Influxer.Config
 
     public class InfluxIdentifiers : OverridableConfigElement
     {
-        [ConfigurationProperty ("ReservedCharecters", DefaultValue = "\\\" ;_()%#./[]{},")]
+        [ConfigurationProperty ("ReservedCharecters", DefaultValue = "\" ;_()%#./*[]{},")]
         public string ReservedCharecters
         {
             get { return (string) this["ReservedCharecters"]; }
             set { this["ReservedCharecters"] = value; }
         }
 
-        [ConfigurationProperty ("ReplaceReservedWith",DefaultValue='_')]
+        [ConfigurationProperty ("ReplaceReservedWith", DefaultValue = '_')]
         public char ReplaceReservedWith
         {
             get { return (char) this["ReplaceReservedWith"]; }
