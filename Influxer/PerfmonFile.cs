@@ -108,8 +108,18 @@ namespace AdysTech.Influxer
                                 var result = await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points);
                                 if ( result )
                                     points = null;
-                                else if ( points.Count >= settings.InfluxDB.PointsInSingleBatch * 2 )
-                                    throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+                                else
+                                {
+                                    //keep only failed points in the list
+                                    points.RemoveAll (p => p.Saved == true);
+
+                                    //points that fail on first try will remain and sent again on second request to InfluxDBClient
+                                    Console.Error.WriteLine ("{0} points failed to write to Influx", points.Count);
+
+                                    //avoid retrying forever
+                                    if ( points.Count >= settings.InfluxDB.PointsInSingleBatch * 3 )
+                                        break;
+                                }
                             }
                         }
                     }
@@ -128,15 +138,29 @@ namespace AdysTech.Influxer
                         Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount);
 
                 }
+                //finally few points may be left out which were not processed (say 10 points left, but we check for 100 points in a batch)
                 if ( points != null )
+                {
                     if ( await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points) )
                         points.Clear ();
+                    else
+                    {
+                        //any previously failed points will remain here, and we need to indicate this in return status
+                        points.RemoveAll (p => p.Saved == true);
+
+                        Console.Error.WriteLine ("{0} points failed to write to Influx", points.Count);
+                        failedCount += points.Count;
+                        if ( points.Count >= settings.InfluxDB.PointsInSingleBatch * 3 )
+                            throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+                    }
+                }
 
                 pecrfCounters.Clear ();
                 stopwatch.Stop ();
                 if ( failedCount > 0 )
                 {
                     Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1} lines, Total Points: {2}", lineCount, failedCount, pointCount);
+                    Console.Error.WriteLine ("Process Started {0}, Input {1}, Processed{2}, Failed:{3}", ( DateTime.Now - stopwatch.Elapsed ), InputFileName, lineCount, failedCount);
                     foreach ( var f in failureReasons.Values )
                         Console.Error.WriteLine ("{0} lines ({1}) failed due to {2} ({3})", f.Count, String.Join (",", f.LineNumbers), f.ExceptionType, f.Message);
                     if ( failedCount == lineCount )
@@ -150,6 +174,7 @@ namespace AdysTech.Influxer
             }
             catch ( Exception e )
             {
+                Console.Error.WriteLine ("Failed to process {0}", InputFileName);
                 Console.Error.WriteLine ("\r\nError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
                 return ExitCode.UnknownError;
             }

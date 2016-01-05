@@ -38,6 +38,12 @@ namespace AdysTech.Influxer
         static int Main(string[] args)
         {
 
+            if ( Debugger.IsAttached )
+            {
+                Console.SetError (new DebugHelper ());
+                Console.SetOut (new DebugHelper ());
+            }
+
             #region Command Line argument processing
             if ( args.Length == 0 )
             {
