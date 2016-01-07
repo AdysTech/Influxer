@@ -36,12 +36,13 @@ namespace AdysTech.Influxer
 
         public async Task<ExitCode> ProcessPerfMonLog(string InputFileName, InfluxDBClient client)
         {
-
+            int linesProcessed = 0;
+            int failedLines = 0;
+            int pointsFound = 0;
+            int failedReqCount = 0;
             try
             {
-                var lineCount = 0;
-                var failedCount = 0;
-                var pointCount = 0;
+
                 StringBuilder content = new StringBuilder ();
                 var failureReasons = new Dictionary<Type, FailureTracker> ();
 
@@ -84,20 +85,22 @@ namespace AdysTech.Influxer
                     perfGroup = pecrfCounters.GroupBy (p => p.PerformanceObject);
                 }
 
-                List<IInfluxDatapoint> points = null;
+                List<IInfluxDatapoint> points = null, retryQueue = new List<IInfluxDatapoint>();
 
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
                 foreach ( var line in File.ReadLines (InputFileName).Skip (1) )
                 {
-                    lineCount++;
                     try
                     {
                         var linePoints = ProcessPerfmonLogLine (line, perfGroup);
+                        linesProcessed++;
+
                         if ( linePoints == null || linePoints.Count == 0 )
-                            failedCount++;
+                            failedLines++;
                         else
                         {
-                            pointCount += linePoints.Count;
+                            pointsFound += linePoints.Count;
+
                             if ( points == null )
                                 points = linePoints;
                             else
@@ -105,39 +108,54 @@ namespace AdysTech.Influxer
 
                             if ( points.Count >= settings.InfluxDB.PointsInSingleBatch )
                             {
-                                var result = await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points);
+                                bool result = false;
+                                try
+                                {
+                                    result = await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points);
+                                }
+                                catch ( ServiceUnavailableException)
+                                {
+                                    result = false;
+                                }
                                 if ( result )
-                                    points = null;
+                                {
+                                    failedReqCount = 0;
+                                }
                                 else
                                 {
-                                    //keep only failed points in the list
-                                    points.RemoveAll (p => p.Saved == true);
+                                    failedReqCount++;
+                                    //add failed to retry queue
+                                    retryQueue.AddRange (points.Where (p => p.Saved != true));
 
-                                    //points that fail on first try will remain and sent again on second request to InfluxDBClient
-                                    Console.Error.WriteLine ("{0} points failed to write to Influx", points.Count);
-
-                                    //avoid retrying forever
-                                    if ( points.Count >= settings.InfluxDB.PointsInSingleBatch * 3 )
+                                    //avoid failing on too many points
+                                    if ( failedReqCount > 4 )
                                         break;
                                 }
+                                //a point will be either posted to Influx or in retry queue
+                                points = null;
                             }
                         }
                     }
                     catch ( Exception e )
                     {
-                        failedCount++;
+                        failedLines++;
                         var type = e.GetType ();
                         if ( !failureReasons.ContainsKey (type) )
                             failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Message = e.Message });
-                        failureReasons[type].LineNumbers.Add (lineCount);
+                        failureReasons[type].LineNumbers.Add (linesProcessed);
                     }
 
-                    if ( failedCount > 0 )
-                        Console.Write ("\r{0} Processed {1}, Failed - {2}                        ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount, failedCount);
+                    if ( failedLines > 0 || retryQueue.Count > 0 )
+                        Console.Write ("\r{0} Processed:- {1} lines, {2} points, Failed:- {3} lines, {4} points     ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), linesProcessed, pointsFound, failedLines, retryQueue.Count);
                     else
-                        Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), lineCount);
+                        Console.Write ("\r{0} Processed:- {1} lines, {2} points", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), linesProcessed, pointsFound);
 
                 }
+
+                //if we reached here due to repeated failures
+                if ( retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || failedReqCount > 3 )
+                    throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+
                 //finally few points may be left out which were not processed (say 10 points left, but we check for 100 points in a batch)
                 if ( points != null )
                 {
@@ -145,33 +163,38 @@ namespace AdysTech.Influxer
                         points.Clear ();
                     else
                     {
-                        //any previously failed points will remain here, and we need to indicate this in return status
-                        points.RemoveAll (p => p.Saved == true);
-
-                        Console.Error.WriteLine ("{0} points failed to write to Influx", points.Count);
-                        failedCount += points.Count;
-                        if ( points.Count >= settings.InfluxDB.PointsInSingleBatch * 3 )
-                            throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+                        failedReqCount++;
+                        //add failed to retry queue
+                        retryQueue.AddRange (points.Where (p => p.Saved != true));
                     }
+                }
+
+                if ( retryQueue.Count > 0 )
+                {
+                    Console.WriteLine ("\n {0} Retrying {1} failed points", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), retryQueue.Count);
+                    if ( await client.PostPointsAsync (settings.InfluxDB.DatabaseName, retryQueue) )
+                        retryQueue.Clear ();
+                    else if ( retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || ++failedReqCount > 4 )
+                        throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
                 }
 
                 pecrfCounters.Clear ();
                 stopwatch.Stop ();
-                if ( failedCount > 0 )
+                if ( failedLines > 0 || retryQueue.Count > 0 )
                 {
-                    Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1} lines, Total Points: {2}", lineCount, failedCount, pointCount);
-                    Console.Error.WriteLine ("Process Started {0}, Input {1}, Processed{2}, Failed:{3}", ( DateTime.Now - stopwatch.Elapsed ), InputFileName, lineCount, failedCount);
+                    Console.Write ("\r{0} Done!! Processed:- {1} lines, {2} points, Failed:- {3} lines, {4} points", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), linesProcessed, pointsFound, failedLines, retryQueue.Count);
+                    Console.Error.WriteLine ("Process Started {0}, Input {1}, Processed:- {2} lines, {3} points, Failed:- {4} lines, {5} points", ( DateTime.Now - stopwatch.Elapsed ), InputFileName, linesProcessed, pointsFound, failedLines, retryQueue.Count);
                     foreach ( var f in failureReasons.Values )
                         Console.Error.WriteLine ("{0} lines ({1}) failed due to {2} ({3})", f.Count, String.Join (",", f.LineNumbers), f.ExceptionType, f.Message);
-                    if ( failedCount == lineCount )
+                    if ( failedLines == linesProcessed || pointsFound == retryQueue.Count )
                         return ExitCode.UnableToProcess;
                     else
                         return ExitCode.ProcessedWithErrors;
                 }
                 else
-                    Console.WriteLine ("\n Done!! Processed {0} lines with {1} points", lineCount, pointCount);
-
+                    Console.WriteLine ("\n Done!! Processed:- {0} lines, {1} points", linesProcessed, pointsFound);
             }
+
             catch ( Exception e )
             {
                 Console.Error.WriteLine ("Failed to process {0}", InputFileName);
