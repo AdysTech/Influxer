@@ -70,6 +70,7 @@
     <Compile Include="Config\IOverridableConfig.cs" />
     <Compile Include="Config\OverridableConfigElement.cs" />
     <Compile Include="Config\PerfmonFileConfig.cs" />
+    <Compile Include="DebugHelper.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="FailureTracker.cs" />
     <Compile Include="GenericColumn.cs" />
