@@ -43,7 +43,6 @@ namespace AdysTech.Influxer
             try
             {
 
-                StringBuilder content = new StringBuilder ();
                 var failureReasons = new Dictionary<Type, FailureTracker> ();
 
                 Stopwatch stopwatch = new Stopwatch ();
@@ -85,7 +84,7 @@ namespace AdysTech.Influxer
                     perfGroup = pecrfCounters.GroupBy (p => p.PerformanceObject);
                 }
 
-                List<IInfluxDatapoint> points = null, retryQueue = new List<IInfluxDatapoint>();
+                List<IInfluxDatapoint> points = null, retryQueue = new List<IInfluxDatapoint> ();
 
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
                 foreach ( var line in File.ReadLines (InputFileName).Skip (1) )
@@ -113,7 +112,7 @@ namespace AdysTech.Influxer
                                 {
                                     result = await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points);
                                 }
-                                catch ( ServiceUnavailableException)
+                                catch ( ServiceUnavailableException )
                                 {
                                     result = false;
                                 }
@@ -264,7 +263,14 @@ namespace AdysTech.Influxer
                     foreach ( var counter in hostGrp )
                     {
                         if ( !String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value) )
-                            point.Fields.Add (counter.CounterName, value);
+                        {
+                            //Perfmon file can have duplicate columns!!
+                            if ( point.Fields.ContainsKey (counter.CounterName) )
+                                point.Fields[counter.CounterName] = value;
+                            else
+                                point.Fields.Add (counter.CounterName, value);
+
+                        }
                     }
                     if ( point.Fields.Count > 0 )
                         points.Add (point);
