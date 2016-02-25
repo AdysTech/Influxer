@@ -115,25 +115,29 @@ namespace AdysTech.Influxer
             }
             #endregion
 
-            try
+            if (totalArguments > 1)
             {
-                if ( !settings.ProcessCommandLineArguments (cmdArgs) )
+                try
                 {
-                    Console.Error.WriteLine ("Invalid commandline arguments!! Use /help to see valid ones");
-                    return (int) ExitCode.InvalidArgument;
+                    if (!settings.ProcessCommandLineArguments(cmdArgs))
+                    {
+                        Console.Error.WriteLine("Invalid commandline arguments!! Use /help to see valid ones");
+                        return (int)ExitCode.InvalidArgument;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine("Error processing arguments", e.GetType().Name, e.Message);
+                    return (int)ExitCode.InvalidArgument;
                 }
             }
-            catch ( Exception e )
+
+            if (cmdArgs.ContainsKey("/export"))
             {
-                Console.Error.WriteLine ("Error processing arguments", e.GetType ().Name, e.Message);
-                return (int) ExitCode.InvalidArgument;
+                InfluxerConfigSection.Export(Console.OpenStandardOutput(), totalArguments > 1 ? false : true);
+                return (int)ExitCode.Success;
             }
 
-            if ( cmdArgs.ContainsKey ("/export") )
-            {
-                InfluxerConfigSection.Export (Console.OpenStandardOutput (), totalArguments > 1 ? false : true);
-                return (int) ExitCode.Success;
-            }
 
             if ( cmdArgs.Count > 0 )
             {

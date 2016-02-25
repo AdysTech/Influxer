@@ -27,37 +27,37 @@ namespace AdysTech.Influxer.Config
 
     public class InfluxerConfigSection : ConfigurationSection, IOverridableConfig
     {
-        [CommandLineArgAttribute ("-input", Usage = "-input <file name>", Description = "Input file name")]
-        [ConfigurationProperty ("InputFileName")]
+        [CommandLineArgAttribute("-input", Usage = "-input <file name>", Description = "Input file name")]
+        [ConfigurationProperty("InputFileName")]
         public string InputFileName
         {
-            get { return (string) this["InputFileName"]; }
+            get { return (string)this["InputFileName"]; }
             set { this["InputFileName"] = value; }
         }
 
-        [CommandLineArgAttribute ("-format", Usage = "-format <format>", Description = "Input file format. Supported: Perfmon, Generic", DefaultValue = "Perfmon")]
-        [ConfigurationProperty ("FileFormat", DefaultValue = FileFormats.Perfmon)]
+        [CommandLineArgAttribute("-format", Usage = "-format <format>", Description = "Input file format. Supported: Perfmon, Generic", DefaultValue = "Perfmon")]
+        [ConfigurationProperty("FileFormat", DefaultValue = FileFormats.Perfmon)]
         public FileFormats FileFormat
         {
-            get { return (FileFormats) this["FileFormat"]; }
+            get { return (FileFormats)this["FileFormat"]; }
             set { this["FileFormat"] = value; }
         }
 
-        [ConfigurationProperty ("InfluxDBConfig")]
+        [ConfigurationProperty("InfluxDBConfig")]
         public InfluxDBConfig InfluxDB
         {
             get { return this["InfluxDBConfig"] as InfluxDBConfig; }
             set { this["InfluxDBConfig"] = value; }
         }
 
-        [ConfigurationProperty ("PerfmonFileConfig")]
+        [ConfigurationProperty("PerfmonFileConfig")]
         public PerfmonFileConfig PerfmonFile
         {
             get { return this["PerfmonFileConfig"] as PerfmonFileConfig; }
             set { this["PerfmonFileConfig"] = value; }
         }
 
-        [ConfigurationProperty ("GenericFileConfig")]
+        [ConfigurationProperty("GenericFileConfig")]
         public GenericFileConfig GenericFile
         {
             get { return this["GenericFileConfig"] as GenericFileConfig; }
@@ -68,77 +68,77 @@ namespace AdysTech.Influxer.Config
 
         public bool ProcessCommandLineArguments(Dictionary<string, string> CommandLine)
         {
-            if ( CommandLine == null || CommandLine.Count == 0 ) return true;
+            if (CommandLine == null || CommandLine.Count == 0) return true;
 
             bool found = false;
-            foreach ( var prop in this.GetType ().GetProperties () )
+            foreach (var prop in this.GetType().GetProperties())
             {
-                if ( CommandLine.Count == 0 )
+                if (CommandLine.Count == 0)
                     break;
 
-                var cmdAttribute = prop.GetCustomAttributes (typeof (CommandLineArgAttribute), true).FirstOrDefault () as CommandLineArgAttribute;
-                if ( cmdAttribute != null )
+                var cmdAttribute = prop.GetCustomAttributes(typeof(CommandLineArgAttribute), true).FirstOrDefault() as CommandLineArgAttribute;
+                if (cmdAttribute != null)
                 {
-                    if ( CommandLine.ContainsKey (cmdAttribute.Argument) )
+                    if (CommandLine.ContainsKey(cmdAttribute.Argument))
                     {
                         found = true;
                         try
                         {
-                            this[prop.Name] = this.Properties[prop.Name].Converter.ConvertFromString (CommandLine[cmdAttribute.Argument]);
+                            this[prop.Name] = this.Properties[prop.Name].Converter.ConvertFromString(CommandLine[cmdAttribute.Argument]);
                         }
-                        catch ( Exception e )
+                        catch (Exception e)
                         {
-                            throw new ArgumentException ("Invalid Argument " + cmdAttribute.Argument, e);
+                            throw new ArgumentException("Invalid Argument " + cmdAttribute.Argument, e);
                         }
-                        CommandLine.Remove (cmdAttribute.Argument);
+                        CommandLine.Remove(cmdAttribute.Argument);
                     }
                 }
             }
 
-            if ( CommandLine.Count == 0 )
+            if (CommandLine.Count == 0)
                 return found;
             bool ret;
-            ret = InfluxDB.ProcessCommandLineArguments (CommandLine);
-            if ( CommandLine.Count == 0 )
+            ret = InfluxDB.ProcessCommandLineArguments(CommandLine);
+            if (CommandLine.Count == 0)
                 return !found ? ret : found;
-            
+
             found = !found ? ret : found;
 
-            if ( FileFormat == FileFormats.Perfmon )
-                ret = PerfmonFile.ProcessCommandLineArguments (CommandLine);
+            if (FileFormat == FileFormats.Perfmon)
+                ret = PerfmonFile.ProcessCommandLineArguments(CommandLine);
             else
-                ret = GenericFile.ProcessCommandLineArguments (CommandLine);
+                ret = GenericFile.ProcessCommandLineArguments(CommandLine);
 
-            return !found ? ret : found; 
+            return !found ? ret : found;
         }
 
         public string PrintHelpText()
         {
-            StringBuilder help = new StringBuilder ();
-            help.AppendLine ("Required flags");
-            foreach ( var prop in this.GetType ().GetProperties () )
+            StringBuilder help = new StringBuilder();
+            help.AppendLine("Required flags");
+            foreach (var prop in this.GetType().GetProperties())
             {
-                var cmdAttribute = prop.GetCustomAttributes (typeof (CommandLineArgAttribute), true).FirstOrDefault () as CommandLineArgAttribute;
-                if ( cmdAttribute != null )
+                var cmdAttribute = prop.GetCustomAttributes(typeof(CommandLineArgAttribute), true).FirstOrDefault() as CommandLineArgAttribute;
+                if (cmdAttribute != null)
                 {
-                    help.AppendFormat ("{0,-40}\t\t{1,-100}", cmdAttribute.Usage, cmdAttribute.Description);
-                    if ( !String.IsNullOrWhiteSpace (cmdAttribute.DefaultValue) )
-                        help.AppendFormat ("\t Default:{0,-40}\n", cmdAttribute.DefaultValue);
+                    help.AppendFormat("{0,-40}\t\t{1,-100}", cmdAttribute.Usage, cmdAttribute.Description);
+                    if (!String.IsNullOrWhiteSpace(cmdAttribute.DefaultValue))
+                        help.AppendFormat("\t Default:{0,-40}\n", cmdAttribute.DefaultValue);
                     else
-                        help.Append ("\n");
+                        help.Append("\n");
                 }
             }
-            help.AppendLine (new String ('-', 180));
-            help.AppendLine ("InfluxDB related flags");
-            help.Append (InfluxDB.PrintHelpText ());
-            help.AppendLine (new String ('-', 180));
-            help.AppendLine ("Perfmon file format related flags");
-            help.Append (PerfmonFile.PrintHelpText ());
-            help.AppendLine (new String ('-', 180));
-            help.AppendLine ("Generic delimited file format related flags");
-            help.Append (GenericFile.PrintHelpText ());
+            help.AppendLine(new String('-', 180));
+            help.AppendLine("InfluxDB related flags");
+            help.Append(InfluxDB.PrintHelpText());
+            help.AppendLine(new String('-', 180));
+            help.AppendLine("Perfmon file format related flags");
+            help.Append(PerfmonFile.PrintHelpText());
+            help.AppendLine(new String('-', 180));
+            help.AppendLine("Generic delimited file format related flags");
+            help.Append(GenericFile.PrintHelpText());
 
-            return help.ToString ();
+            return help.ToString();
         }
 
         #endregion
@@ -151,8 +151,8 @@ namespace AdysTech.Influxer.Config
         /// <returns></returns>
         public static InfluxerConfigSection GetCurrentOrDefault()
         {
-            if ( _instance == null )
-                return LoadDefault ();
+            if (_instance == null)
+                return LoadDefault();
             else
                 return _instance;
         }
@@ -163,7 +163,7 @@ namespace AdysTech.Influxer.Config
         /// <returns>cref:InfluxerConfigSection</returns>
         public static InfluxerConfigSection LoadDefault()
         {
-            _instance = new InfluxerConfigSection ();
+            _instance = new InfluxerConfigSection();
             return _instance;
         }
 
@@ -175,7 +175,7 @@ namespace AdysTech.Influxer.Config
         /// <returns>InfluxerConfigSection created based on entries in config file</returns>
         public static InfluxerConfigSection Load(string path)
         {
-            if ( _instance == null )
+            if (_instance == null)
             {
                 //if ( path.EndsWith (".config",
                 //        StringComparison.InvariantCultureIgnoreCase) )
@@ -183,17 +183,17 @@ namespace AdysTech.Influxer.Config
                 //Configuration config =
                 //        ConfigurationManager.OpenExeConfiguration (path);
 
-                ExeConfigurationFileMap configMap = new ExeConfigurationFileMap ();
+                ExeConfigurationFileMap configMap = new ExeConfigurationFileMap();
                 configMap.ExeConfigFilename = path;
-                Configuration config = ConfigurationManager.OpenMappedExeConfiguration (configMap, ConfigurationUserLevel.None);
+                Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
 
-                if ( config.Sections["InfluxerConfiguration"] != null )
+                if (config.Sections["InfluxerConfiguration"] != null)
                 {
-                    _instance = (InfluxerConfigSection) config.Sections["InfluxerConfiguration"];
+                    _instance = (InfluxerConfigSection)config.Sections["InfluxerConfiguration"];
                 }
                 else
                 {
-                    throw new InvalidOperationException ("InfluxerConfiguration section was not found!!, Use Config switch to get a config file with default values");
+                    throw new InvalidOperationException("InfluxerConfiguration section was not found!!, Use Config switch to get a config file with default values");
                 }
             }
             return _instance;
@@ -207,24 +207,44 @@ namespace AdysTech.Influxer.Config
         /// <returns>true: if successful, false otherwise</returns>
         public static bool Export(Stream outStream, bool defaultValues = false)
         {
-            var tmpFile = System.IO.Path.GetTempFileName ();
+            var tmpFile = System.IO.Path.GetTempFileName();
             try
             {
-                var config = ConfigurationManager.OpenExeConfiguration (ConfigurationUserLevel.None);
-                config.Sections.Add ("InfluxerConfiguration", defaultValues ? new InfluxerConfigSection () : _instance);
-                config.Sections["InfluxerConfiguration"].SectionInformation.ForceSave = true;
-                config.SaveAs (tmpFile, ConfigurationSaveMode.Full);
-                config = null;
-                using ( var content = File.OpenRead (tmpFile) )
+                var section = defaultValues ? new InfluxerConfigSection() : _instance;
+                Configuration config;
+                if (section.CurrentConfiguration == null)
                 {
-                    content.CopyTo (outStream);
-                    outStream.Flush ();
-                    content.Close ();
+                    config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                    config.Sections.Add("InfluxerConfiguration", section);
+                }
+                else
+                {
+                    config = section.CurrentConfiguration;
+                }
+
+                #region Add any sample values, but not added by default
+                if (defaultValues)
+                {
+                    if (section.GenericFile.ColumnLayout.Count == 0)
+                    {
+                        section.GenericFile.ColumnLayout[0] = new ColumnConfig() { NameInFile = "SampleColumn123, if this is missing column position is used", InfluxName = "Tag_ServerName", Skip = false, DataType = ColumnDataType.Tag };
+                    }
+                }
+                #endregion
+
+                config.Sections["InfluxerConfiguration"].SectionInformation.ForceSave = true;
+                config.SaveAs(tmpFile, ConfigurationSaveMode.Full);
+                config = null;
+                using (var content = File.OpenRead(tmpFile))
+                {
+                    content.CopyTo(outStream);
+                    outStream.Flush();
+                    content.Close();
                 }
             }
             finally
             {
-                File.Delete (tmpFile);
+                File.Delete(tmpFile);
             }
             return true;
         }
