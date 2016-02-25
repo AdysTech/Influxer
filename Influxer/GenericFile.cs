@@ -41,7 +41,9 @@ namespace AdysTech.Influxer
 
             try
             {
-
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                List<GenericColumn> columnHeaders = new List<GenericColumn>();
                 if (settings.GenericFile.HeaderMissing && settings.GenericFile.ColumnLayout.Count == 0)
                 {
                     Console.WriteLine("Header missing, but no columns defined in configuration. Cannot proceed!!");
@@ -49,29 +51,26 @@ namespace AdysTech.Influxer
                     return ExitCode.InvalidArgument;
                 }
 
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-
-                List<GenericColumn> columnHeaders = new List<GenericColumn>();
-
-                if (!settings.GenericFile.HeaderMissing)
+                else if (!settings.GenericFile.HeaderMissing)
                 {
                     var firstLine = File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow - 1).FirstOrDefault();
                     var columns = ParseGenericColumns(firstLine);
-                    foreach (var c in columns)
+                    if (settings.GenericFile.ColumnLayout.Count > 0)
                     {
-                        if (!String.IsNullOrWhiteSpace(settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile) && settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile != c.ColumnHeader)
+                        foreach (var c in columns)
                         {
-                            Console.WriteLine("Column Mismatch: Column[%0] defined in configuration %1, found %2. Cannot proceed!!", c.ColumnIndex, settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile, c.ColumnHeader);
-                            Console.Error.WriteLine("Column Mismatch: Column[%0] defined in configuration %1, found %2. Cannot proceed!!", c.ColumnIndex, settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile, c.ColumnHeader);
-                            return ExitCode.InvalidArgument;
-                        }
+                            if (!String.IsNullOrWhiteSpace(settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile) && settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile != c.ColumnHeader)
+                            {
+                                Console.WriteLine("Column Mismatch: Column[%0] defined in configuration %1, found %2. Cannot proceed!!", c.ColumnIndex, settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile, c.ColumnHeader);
+                                Console.Error.WriteLine("Column Mismatch: Column[%0] defined in configuration %1, found %2. Cannot proceed!!", c.ColumnIndex, settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile, c.ColumnHeader);
+                                return ExitCode.InvalidArgument;
+                            }
 
-                        if (!settings.GenericFile.ColumnLayout[c.ColumnIndex].Skip)
-                        {
-                            c.ColumnHeader = settings.GenericFile.ColumnLayout[c.ColumnIndex].InfluxName;
-                            columnHeaders.Add(c);
+                            if (!settings.GenericFile.ColumnLayout[c.ColumnIndex].Skip)
+                            {
+                                c.ColumnHeader = settings.GenericFile.ColumnLayout[c.ColumnIndex].InfluxName;
+                                columnHeaders.Add(c);
+                            }
                         }
                     }
                 }
