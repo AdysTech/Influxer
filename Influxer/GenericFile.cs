@@ -88,10 +88,14 @@ namespace AdysTech.Influxer
                 Dictionary<string, List<string>> dbStructure;
                 if (settings.GenericFile.Filter != Filters.None)
                 {
-                    if (settings.GenericFile.Filter == Filters.Columns && settings.GenericFile.ColumnLayout != null && settings.GenericFile.ColumnLayout.Count > 0)
-                        Console.WriteLine("Column Filtering is not applicable when columns are defined in Config file. Use the Skip attribute on each column to filter them");
-
-                    var filterColumns = ParseGenericColumns(settings.GenericFile.ColumnsFilter.Columns.ToString());
+                    var filterColumns = new List<GenericColumn>();
+                    if (settings.GenericFile.Filter == Filters.Columns)
+                    {
+                        if (settings.GenericFile.ColumnLayout != null && settings.GenericFile.ColumnLayout.Count > 0)
+                            Console.WriteLine("Column Filtering is not applicable when columns are defined in Config file. Use the Skip attribute on each column to filter them");
+                        else
+                            filterColumns = ParseGenericColumns(settings.GenericFile.ColumnsFilter.Columns.ToString());
+                    }
 
                     dbStructure = await client.GetInfluxDBStructureAsync(settings.InfluxDB.DatabaseName);
                     columnHeaders = FilterGenericColumns(columnHeaders, filterColumns, dbStructure);
@@ -153,6 +157,14 @@ namespace AdysTech.Influxer
                         if (!failureReasons.ContainsKey(type))
                             failureReasons.Add(type, new FailureTracker() { ExceptionType = type, Message = e.Message });
                         failureReasons[type].LineNumbers.Add(linesProcessed + settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows + 1);
+
+                        //avoid too many failures, may be config is wrong
+                        if (failedLines > settings.InfluxDB.PointsInSingleBatch * 3)
+                        {
+                            Console.WriteLine("\n Too many failed points, refer to error info. Aborting!!");
+                            Console.Error.WriteLine("\n Too many failed points, refer to error info. Aborting!!");
+                            break;
+                        }
                     }
 
                     linesProcessed++;
