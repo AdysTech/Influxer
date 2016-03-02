@@ -50,5 +50,34 @@ namespace AdysTech.Influxer.Config
             set { this["SkipRows"] = value; }
         }
 
+        [CommandLineArgAttribute("-ignore", Usage = "-ignore <char>", Description = "Lines starting with <char> are considered as comments, and ignored")]
+        [ConfigurationProperty("CommentMarker")]
+        public string CommentMarker
+        {
+            get { return (string)this["CommentMarker"]; }
+            set { this["CommentMarker"] = value; }
+        }
+
+        [ConfigurationProperty("TimeColumn", DefaultValue = 1)]
+        public int TimeColumn
+        {
+            get { return (int)this["TimeColumn"]; }
+            set { this["TimeColumn"] = value; }
+        }
+
+        [CommandLineArgAttribute("-noheader", Usage = "-noheader true", Description = "Input file does not have column headers, configuration file should provide a column header mapping")]
+        [ConfigurationProperty("HeaderMissing")]
+        public bool HeaderMissing
+        {
+            get { return (bool)this["HeaderMissing"]; }
+            set { this["HeaderMissing"] = value; }
+        }
+
+        [ConfigurationProperty("ColumnLayout")]
+        public ColumnLayoutConfig ColumnLayout
+        {
+            get { return (ColumnLayoutConfig)this["ColumnLayout"]; }
+            set { this["ColumnLayout"] = value; }
+        }
     }
 }

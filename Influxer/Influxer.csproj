@@ -63,6 +63,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config\ColumnConfig.cs" />
+    <Compile Include="Config\ColumnLayoutConfig.cs" />
     <Compile Include="Config\CommandLineArgAttribute.cs" />
     <Compile Include="Config\GenericFileConfig.cs" />
     <Compile Include="Config\InfluxDBConfig.cs" />

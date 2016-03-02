@@ -20,15 +20,15 @@ namespace AdysTech.Influxer
 
         public GenericFile()
         {
-            settings = InfluxerConfigSection.GetCurrentOrDefault ();
-            pattern = new Regex (settings.GenericFile.ColumnSplitter, RegexOptions.Compiled);
-            defaultTags = new Dictionary<string, string> ();
-            if ( settings.GenericFile.DefaultTags.Tags != null && settings.GenericFile.DefaultTags.Tags.Count > 0 )
+            settings = InfluxerConfigSection.GetCurrentOrDefault();
+            pattern = new Regex(settings.GenericFile.ColumnSplitter, RegexOptions.Compiled);
+            defaultTags = new Dictionary<string, string>();
+            if (settings.GenericFile.DefaultTags.Tags != null && settings.GenericFile.DefaultTags.Tags.Count > 0)
             {
-                foreach ( var tag in settings.GenericFile.DefaultTags.Tags )
+                foreach (var tag in settings.GenericFile.DefaultTags.Tags)
                 {
-                    var tags = tag.Split ('=');
-                    defaultTags.Add (tags[0], tags[1]);
+                    var tags = tag.Split('=');
+                    defaultTags.Add(tags[0], tags[1]);
                 }
             }
         }
@@ -41,139 +41,192 @@ namespace AdysTech.Influxer
 
             try
             {
-                Stopwatch stopwatch = new Stopwatch ();
-                stopwatch.Start ();
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                List<GenericColumn> columnHeaders = new List<GenericColumn>();
+                if (settings.GenericFile.HeaderMissing && settings.GenericFile.ColumnLayout.Count == 0)
+                {
+                    Console.WriteLine("Header missing, but no columns defined in configuration. Cannot proceed!!");
+                    Console.Error.WriteLine("Header missing, but no columns defined in configuration. Cannot proceed!!");
+                    return ExitCode.InvalidArgument;
+                }
 
-                List<GenericColumn> columnHeaders;
+                else if (!settings.GenericFile.HeaderMissing)
+                {
+                    var firstLine = File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow - 1).FirstOrDefault();
+                    var columns = ParseGenericColumns(firstLine);
+                    if (settings.GenericFile.ColumnLayout.Count > 0)
+                    {
+                        foreach (var c in columns)
+                        {
+                            if (!String.IsNullOrWhiteSpace(settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile) && settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile != c.ColumnHeader)
+                            {
+                                Console.WriteLine("Column Mismatch: Column[%0] defined in configuration %1, found %2. Cannot proceed!!", c.ColumnIndex, settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile, c.ColumnHeader);
+                                Console.Error.WriteLine("Column Mismatch: Column[%0] defined in configuration %1, found %2. Cannot proceed!!", c.ColumnIndex, settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile, c.ColumnHeader);
+                                return ExitCode.InvalidArgument;
+                            }
 
-                var firstLine = File.ReadLines (InputFileName).Skip (settings.GenericFile.HeaderRow - 1).FirstOrDefault ();
-                columnHeaders = ParseGenericColumns (firstLine);
+                            if (!settings.GenericFile.ColumnLayout[c.ColumnIndex].Skip)
+                            {
+                                c.ColumnHeader = settings.GenericFile.ColumnLayout[c.ColumnIndex].InfluxName;
+                                columnHeaders.Add(c);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var index = 0;
+                    foreach (ColumnConfig c in settings.GenericFile.ColumnLayout)
+                    {
+                        if (!c.Skip)
+                            columnHeaders.Add(new GenericColumn() { ColumnHeader = c.InfluxName, ColumnIndex = index, Type = c.DataType });
+                        index++;
+                    }
+                }
 
                 Dictionary<string, List<string>> dbStructure;
-                if ( settings.GenericFile.Filter != Filters.None )
+                if (settings.GenericFile.Filter != Filters.None)
                 {
-                    var filterColumns = ParseGenericColumns (settings.GenericFile.ColumnsFilter.Columns.ToString ());
+                    var filterColumns = new List<GenericColumn>();
+                    if (settings.GenericFile.Filter == Filters.Columns)
+                    {
+                        if (settings.GenericFile.ColumnLayout != null && settings.GenericFile.ColumnLayout.Count > 0)
+                            Console.WriteLine("Column Filtering is not applicable when columns are defined in Config file. Use the Skip attribute on each column to filter them");
+                        else
+                            filterColumns = ParseGenericColumns(settings.GenericFile.ColumnsFilter.Columns.ToString());
+                    }
 
-                    dbStructure = await client.GetInfluxDBStructureAsync (settings.InfluxDB.DatabaseName);
-                    columnHeaders = FilterGenericColumns (columnHeaders, filterColumns, dbStructure);
+                    dbStructure = await client.GetInfluxDBStructureAsync(settings.InfluxDB.DatabaseName);
+                    columnHeaders = FilterGenericColumns(columnHeaders, filterColumns, dbStructure);
 
                 }
 
-                var validity = ValidateData (InputFileName, columnHeaders);
+                var validity = ValidateData(InputFileName, columnHeaders);
 
-                var failureReasons = new Dictionary<Type, FailureTracker> ();
+                var failureReasons = new Dictionary<Type, FailureTracker>();
 
-                List<IInfluxDatapoint> points = new List<IInfluxDatapoint> (), retryQueue = new List<IInfluxDatapoint> ();
+                List<IInfluxDatapoint> points = new List<IInfluxDatapoint>(), retryQueue = new List<IInfluxDatapoint>();
 
-                //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
-                foreach ( var line in File.ReadLines (InputFileName).Skip (settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows) )
+                foreach (var line in File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows))
                 {
+                    if (String.IsNullOrWhiteSpace(line) || (!String.IsNullOrEmpty(settings.GenericFile.CommentMarker) && line.StartsWith(settings.GenericFile.CommentMarker)))
+                        continue;
+
                     try
                     {
-                        var point = ProcessGenericLine (line, columnHeaders);
-                        if ( point == null )
+                        var point = ProcessGenericLine(line, columnHeaders);
+                        if (point == null)
                             failedLines++;
                         else
-                            points.Add (point);
+                            points.Add(point);
 
-                        if ( points.Count >= settings.InfluxDB.PointsInSingleBatch )
+                        if (points.Count >= settings.InfluxDB.PointsInSingleBatch)
                         {
                             bool result = false;
                             try
                             {
-                                result = await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points);
+                                result = await client.PostPointsAsync(settings.InfluxDB.DatabaseName, points);
                             }
-                            catch ( ServiceUnavailableException )
+                            catch (ServiceUnavailableException)
                             {
                                 result = false;
                             }
 
-                            if ( result )
+                            if (result)
                             {
                                 failedReqCount = 0;
                             }
                             else
                             {
                                 //add failed to retry queue
-                                retryQueue.AddRange (points.Where (p => p.Saved != true));
+                                retryQueue.AddRange(points.Where(p => p.Saved != true));
 
                                 //avoid failing on too many points
-                                if ( ++failedReqCount > 3 )
+                                if (++failedReqCount > 3)
                                     break;
                             }
                             //a point will be either posted to Influx or in retry queue
-                            points.Clear ();
+                            points.Clear();
                         }
                     }
-                    catch ( Exception e )
+                    catch (Exception e)
                     {
                         failedLines++;
-                        var type = e.GetType ();
-                        if ( !failureReasons.ContainsKey (type) )
-                            failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Message = e.Message });
-                        failureReasons[type].LineNumbers.Add (linesProcessed + settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows + 1);
+                        var type = e.GetType();
+                        if (!failureReasons.ContainsKey(type))
+                            failureReasons.Add(type, new FailureTracker() { ExceptionType = type, Message = e.Message });
+                        failureReasons[type].LineNumbers.Add(linesProcessed + settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows + 1);
+
+                        //avoid too many failures, may be config is wrong
+                        if (failedLines > settings.InfluxDB.PointsInSingleBatch * 3)
+                        {
+                            Console.WriteLine("\n Too many failed points, refer to error info. Aborting!!");
+                            Console.Error.WriteLine("\n Too many failed points, refer to error info. Aborting!!");
+                            break;
+                        }
                     }
 
                     linesProcessed++;
 
-                    if ( failedLines > 0 || retryQueue.Count > 0 )
-                        Console.Write ("\r{0} Processed {1}, Failed {2}, Queued {3}                        ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), linesProcessed, failedLines, retryQueue.Count);
+                    if (failedLines > 0 || retryQueue.Count > 0)
+                        Console.Write("\r{0} Processed {1}, Failed {2}, Queued {3}                        ", stopwatch.Elapsed.ToString(@"hh\:mm\:ss"), linesProcessed, failedLines, retryQueue.Count);
                     else
-                        Console.Write ("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), linesProcessed);
+                        Console.Write("\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString(@"hh\:mm\:ss"), linesProcessed);
 
                 }
 
                 //if we reached here due to repeated failures
-                if ( retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || failedReqCount > 3 )
-                    throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+                if (retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || failedReqCount > 3)
+                    throw new InvalidOperationException("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
 
 
                 //finally few points may be left out which were not processed (say 10 points left, but we check for 100 points in a batch)
-                if ( points != null && points.Count > 0 )
+                if (points != null && points.Count > 0)
                 {
 
-                    if ( await client.PostPointsAsync (settings.InfluxDB.DatabaseName, points) )
-                        points.Clear ();
+                    if (await client.PostPointsAsync(settings.InfluxDB.DatabaseName, points))
+                        points.Clear();
                     else
                     {
                         failedReqCount++;
                         //add failed to retry queue
-                        retryQueue.AddRange (points.Where (p => p.Saved != true));
+                        retryQueue.AddRange(points.Where(p => p.Saved != true));
                     }
                 }
 
                 //retry all previously failed points
-                if ( retryQueue.Count > 0 )
+                if (retryQueue.Count > 0)
                 {
-                    Console.WriteLine ("\n {0} Retrying {1} failed points", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), retryQueue.Count);
-                    if ( await client.PostPointsAsync (settings.InfluxDB.DatabaseName, retryQueue) )
-                        retryQueue.Clear ();
+                    Console.WriteLine("\n {0} Retrying {1} failed points", stopwatch.Elapsed.ToString(@"hh\:mm\:ss"), retryQueue.Count);
+                    if (await client.PostPointsAsync(settings.InfluxDB.DatabaseName, retryQueue))
+                        retryQueue.Clear();
                     else
                     {
                         failedLines += retryQueue.Count;
-                        if ( retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || ++failedReqCount > 4 )
-                            throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+                        if (retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || ++failedReqCount > 4)
+                            throw new InvalidOperationException("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
                     }
                 }
 
-                stopwatch.Stop ();
-                if ( failedLines > 0 )
+                stopwatch.Stop();
+                if (failedLines > 0)
                 {
-                    Console.WriteLine ("\n Done!! Processed {0}, failed to insert {1}", linesProcessed, failedLines);
-                    Console.Error.WriteLine ("Process Started {0}, Input {1}, Processed{2}, Failed:{3}", ( DateTime.Now - stopwatch.Elapsed ), InputFileName, linesProcessed, failedLines);
-                    foreach ( var f in failureReasons.Values )
-                        Console.Error.WriteLine ("{0} lines ({1}) failed due to {2} ({3})", f.Count, String.Join (",", f.LineNumbers), f.ExceptionType, f.Message);
-                    if ( failedLines == linesProcessed )
+                    Console.WriteLine("\n Done!! Processed {0}, failed to insert {1}", linesProcessed, failedLines);
+                    Console.Error.WriteLine("Process Started {0}, Input {1}, Processed{2}, Failed:{3}", (DateTime.Now - stopwatch.Elapsed), InputFileName, linesProcessed, failedLines);
+                    foreach (var f in failureReasons.Values)
+                        Console.Error.WriteLine("{0} lines ({1}) failed due to {2} ({3})", f.Count, String.Join(",", f.LineNumbers), f.ExceptionType, f.Message);
+                    if (failedLines == linesProcessed)
                         return ExitCode.UnableToProcess;
                     else
                         return ExitCode.ProcessedWithErrors;
                 }
 
             }
-            catch ( Exception e )
+            catch (Exception e)
             {
-                Console.Error.WriteLine ("Failed to process {0}", InputFileName);
-                Console.Error.WriteLine ("\r\nError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
+                Console.Error.WriteLine("Failed to process {0}", InputFileName);
+                Console.Error.WriteLine("\r\nError!! {0}:{1} - {2}", e.GetType().Name, e.Message, e.StackTrace);
                 return ExitCode.UnknownError;
             }
             return ExitCode.Success;
@@ -182,30 +235,42 @@ namespace AdysTech.Influxer
         private bool ValidateData(string InputFileName, List<GenericColumn> columnHeaders)
         {
             var lineNo = 0;
-            if ( settings.GenericFile.ValidateRows == 0 )
+            if (settings.GenericFile.ValidateRows == 0)
                 settings.GenericFile.ValidateRows = 1;
 
-            foreach ( var line in File.ReadLines (InputFileName).Skip (settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows) )
+            foreach (var line in File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows))
             {
-                var columns = pattern.Split (line.Replace ("\"", ""));
+                if (String.IsNullOrWhiteSpace(line) || (!String.IsNullOrEmpty(settings.GenericFile.CommentMarker) && line.StartsWith(settings.GenericFile.CommentMarker)))
+                    continue;
+
+                var columns = pattern.Split(line.Replace("\"", ""));
                 double value = 0.0;
 
-                foreach ( var c in columnHeaders.Skip (1) )
+                foreach (var c in columnHeaders)
                 {
-                    if ( c.Type == GenericColumn.ColumnDataType.Unknown )
+                    if (c.ColumnIndex == settings.GenericFile.TimeColumn - 1)
                     {
-                        if ( Double.TryParse (columns[c.ColumnIndex], out value) )
-                            c.Type = GenericColumn.ColumnDataType.Field;
-                        else
-                            c.Type = GenericColumn.ColumnDataType.Tag;
+                        DateTime timeStamp;
+                        if (!DateTime.TryParseExact(columns[settings.GenericFile.TimeColumn - 1], settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
+                            throw new FormatException("Couldn't parse " + columns[0] + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
                     }
                     else
                     {
-                        if ( ( Double.TryParse (columns[c.ColumnIndex], out value) && c.Type == GenericColumn.ColumnDataType.Tag ) || ( c.Type == GenericColumn.ColumnDataType.Field && double.IsNaN (value) ) )
-                            throw new InvalidDataException (c.ColumnHeader + " has inconsistent data");
+                        if (c.Type == ColumnDataType.Unknown)
+                        {
+                            if (Double.TryParse(columns[c.ColumnIndex], out value))
+                                c.Type = ColumnDataType.Field;
+                            else
+                                c.Type = ColumnDataType.Tag;
+                        }
+                        else
+                        {
+                            if ((Double.TryParse(columns[c.ColumnIndex], out value) && c.Type == ColumnDataType.Tag) || (c.Type == ColumnDataType.Field && double.IsNaN(value)))
+                                throw new InvalidDataException(c.ColumnHeader + " has inconsistent data");
+                        }
                     }
                 }
-                if ( ++lineNo == settings.GenericFile.ValidateRows )
+                if (++lineNo == settings.GenericFile.ValidateRows)
                     break;
             }
             return true;
@@ -213,21 +278,21 @@ namespace AdysTech.Influxer
 
         private List<GenericColumn> ParseGenericColumns(string headerLine)
         {
-            var columns = new List<GenericColumn> ();
-            columns.AddRange (pattern.Split (headerLine).Select ((s, i) => new GenericColumn () { ColumnIndex = i, ColumnHeader = s.Replace (settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray (), settings.InfluxDB.InfluxReserved.ReplaceReservedWith) }));
+            var columns = new List<GenericColumn>();
+            columns.AddRange(pattern.Split(headerLine).Select((s, i) => new GenericColumn() { ColumnIndex = i, ColumnHeader = s.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith) }));
             return columns;
         }
 
         private List<GenericColumn> FilterGenericColumns(List<GenericColumn> columns, List<GenericColumn> filterColumns, Dictionary<string, List<string>> dbStructure)
         {
-            switch ( settings.GenericFile.Filter )
+            switch (settings.GenericFile.Filter)
             {
                 case Filters.Measurement:
-                    return columns.Where (p => dbStructure.ContainsKey (settings.GenericFile.TableName)).ToList ();
+                    return columns.Where(p => dbStructure.ContainsKey(settings.GenericFile.TableName)).ToList();
                 case Filters.Field:
-                    return columns.Where (p => dbStructure.ContainsKey (settings.GenericFile.TableName) && dbStructure[settings.GenericFile.TableName].Contains (p.ColumnHeader)).ToList ();
+                    return columns.Where(p => dbStructure.ContainsKey(settings.GenericFile.TableName) && dbStructure[settings.GenericFile.TableName].Contains(p.ColumnHeader)).ToList();
                 case Filters.Columns:
-                    return columns.Where (p => filterColumns.Any (f => f.ColumnHeader == p.ColumnHeader)).ToList ();
+                    return columns.Where(p => filterColumns.Any(f => f.ColumnHeader == p.ColumnHeader)).ToList();
             }
             return columns;
         }
@@ -235,36 +300,38 @@ namespace AdysTech.Influxer
         private InfluxDatapoint<double> ProcessGenericLine(string line, List<GenericColumn> columnHeaders)
         {
 
-            var columns = pattern.Split (line.Replace ("\"", ""));
-            var columnCount = columns.Count ();
+            var columns = pattern.Split(line.Replace("\"", ""));
+            var columnCount = columns.Count();
 
-            InfluxDatapoint<double> point = new InfluxDatapoint<double> ();
+            InfluxDatapoint<double> point = new InfluxDatapoint<double>();
             point.Precision = settings.GenericFile.Precision;
             point.MeasurementName = settings.GenericFile.TableName;
 
             DateTime timeStamp;
-            if ( !DateTime.TryParseExact (columns[0], settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp) )
-                throw new FormatException ("Couldn't parse " + columns[0] + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
-            point.UtcTimestamp = timeStamp.AddMinutes (settings.GenericFile.UtcOffset);
+            if (!DateTime.TryParseExact(columns[settings.GenericFile.TimeColumn - 1], settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
+                throw new FormatException("Couldn't parse " + columns[0] + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
+            point.UtcTimestamp = timeStamp.AddMinutes(settings.GenericFile.UtcOffset);
 
-            point.InitializeTags (defaultTags);
+            point.InitializeTags(defaultTags);
 
-            foreach ( var c in columnHeaders.Skip (1) )
+            foreach (var c in columnHeaders)
             {
+                if (c.ColumnIndex == settings.GenericFile.TimeColumn - 1) continue;
+
                 double value = double.NaN;
-                if ( c.Type == GenericColumn.ColumnDataType.Field )
+                if (c.Type == ColumnDataType.Field)
                 {
-                    if ( !Double.TryParse (columns[c.ColumnIndex], out value) )
-                        throw new InvalidDataException (c.ColumnHeader + " has inconsistent data, Unable to parse " + columns[c.ColumnIndex] + " as number");
-                    point.Fields.Add (c.ColumnHeader, Math.Round (value, 2));
+                    if (!Double.TryParse(columns[c.ColumnIndex], out value))
+                        throw new InvalidDataException(c.ColumnHeader + " has inconsistent data, Unable to parse \"" + columns[c.ColumnIndex] + "\" as number");
+                    point.Fields.Add(c.ColumnHeader, Math.Round(value, 2));
                 }
-                else if ( c.Type == GenericColumn.ColumnDataType.Tag )
-                    point.Tags.Add (c.ColumnHeader, columns[c.ColumnIndex].Replace (settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray (), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
+                else if (c.Type == ColumnDataType.Tag)
+                    point.Tags.Add(c.ColumnHeader, columns[c.ColumnIndex].Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
             }
 
 
-            if ( point.Fields.Count == 0 )
-                throw new InvalidDataException ("No values found on the row to post to Influx");
+            if (point.Fields.Count == 0)
+                throw new InvalidDataException("No values found on the row to post to Influx");
             return point;
         }
     }
