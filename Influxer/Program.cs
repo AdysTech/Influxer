@@ -127,7 +127,7 @@ namespace AdysTech.Influxer
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine("Error processing arguments", e.GetType().Name, e.Message);
+                    Console.Error.WriteLine("Error processing arguments {0}: {1}", e.GetType().Name, e.Message);
                     return (int)ExitCode.InvalidArgument;
                 }
             }

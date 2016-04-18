@@ -69,8 +69,17 @@ namespace AdysTech.Influxer
                             if (!settings.GenericFile.ColumnLayout[c.ColumnIndex].Skip)
                             {
                                 c.ColumnHeader = settings.GenericFile.ColumnLayout[c.ColumnIndex].InfluxName;
+                                c.Type = settings.GenericFile.ColumnLayout[c.ColumnIndex].DataType;
+                                c.Config = settings.GenericFile.ColumnLayout[c.ColumnIndex];
                                 columnHeaders.Add(c);
                             }
+                        }
+                    }
+                    else
+                    {
+                        foreach (var c in columns)
+                        {
+                            columnHeaders.Add(c);
                         }
                     }
                 }
@@ -80,12 +89,12 @@ namespace AdysTech.Influxer
                     foreach (ColumnConfig c in settings.GenericFile.ColumnLayout)
                     {
                         if (!c.Skip)
-                            columnHeaders.Add(new GenericColumn() { ColumnHeader = c.InfluxName, ColumnIndex = index, Type = c.DataType });
+                            columnHeaders.Add(new GenericColumn() { ColumnHeader = c.InfluxName, ColumnIndex = index, Type = c.DataType, Config = c });
                         index++;
                     }
                 }
 
-                Dictionary<string, List<string>> dbStructure;
+                InfluxDatabase dbStructure;
                 if (settings.GenericFile.Filter != Filters.None)
                 {
                     var filterColumns = new List<GenericColumn>();
@@ -107,6 +116,38 @@ namespace AdysTech.Influxer
                 var failureReasons = new Dictionary<Type, FailureTracker>();
 
                 List<IInfluxDatapoint> points = new List<IInfluxDatapoint>(), retryQueue = new List<IInfluxDatapoint>();
+                InfluxRetentionPolicy policy = null;
+
+                if (settings.InfluxDB.RetentionDuration != 0 || !String.IsNullOrWhiteSpace( settings.InfluxDB.RetentionPolicy ))
+                {
+                    var policies = await client.GetRetentionPoliciesAsync(settings.InfluxDB.DatabaseName);
+                    //if duraiton is specified that takes precidence
+                    if (settings.InfluxDB.RetentionDuration != 0)
+                    {
+                        policy = policies.FirstOrDefault(p => p.Duration.TotalMinutes == settings.InfluxDB.RetentionDuration);
+
+                        if (policy == null)
+                        {
+                            policy = new InfluxRetentionPolicy()
+                            {
+                                Name = String.IsNullOrWhiteSpace(settings.InfluxDB.RetentionPolicy) ? String.Format("InfluxerRetention_{0}min", settings.InfluxDB.RetentionDuration) : settings.InfluxDB.RetentionPolicy,
+                                DBName = settings.InfluxDB.DatabaseName,
+                                Duration = TimeSpan.FromMinutes(settings.InfluxDB.RetentionDuration),
+                                IsDefault = false,
+                                ReplicaN = 1
+                            };
+                            if (!await client.CreateRetentionPolicyAsync(policy))
+                                throw new InvalidOperationException("Unable to create retention policy");
+                        }
+                    }
+                    else if(!String.IsNullOrWhiteSpace(settings.InfluxDB.RetentionPolicy))
+                    {
+                        policy = policies.FirstOrDefault(p => p.Name == settings.InfluxDB.RetentionPolicy);
+                        if (policy == null)
+                            throw new ArgumentException("No Retention policy with Name {0} was found, and duration is not specified to create a new one!!", settings.InfluxDB.RetentionPolicy);
+                    }
+                }
+
 
                 foreach (var line in File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows))
                 {
@@ -119,7 +160,10 @@ namespace AdysTech.Influxer
                         if (point == null)
                             failedLines++;
                         else
+                        {
+                            point.Retention = policy;
                             points.Add(point);
+                        }
 
                         if (points.Count >= settings.InfluxDB.PointsInSingleBatch)
                         {
@@ -256,16 +300,20 @@ namespace AdysTech.Influxer
                     }
                     else
                     {
+                        var content = columns[c.ColumnIndex];
+                        if (c.HasTransformations && c.CanTransform(content))
+                            content = c.Transform(content);
+
                         if (c.Type == ColumnDataType.Unknown)
                         {
-                            if (Double.TryParse(columns[c.ColumnIndex], out value))
-                                c.Type = ColumnDataType.Field;
+                            if (Double.TryParse(content, out value))
+                                c.Type = ColumnDataType.NumericalField;
                             else
                                 c.Type = ColumnDataType.Tag;
                         }
                         else
                         {
-                            if ((Double.TryParse(columns[c.ColumnIndex], out value) && c.Type == ColumnDataType.Tag) || (c.Type == ColumnDataType.Field && double.IsNaN(value)))
+                            if (c.Type == ColumnDataType.NumericalField && (!Double.TryParse(content, out value) || double.IsNaN(value)))
                                 throw new InvalidDataException(c.ColumnHeader + " has inconsistent data");
                         }
                     }
@@ -283,14 +331,16 @@ namespace AdysTech.Influxer
             return columns;
         }
 
-        private List<GenericColumn> FilterGenericColumns(List<GenericColumn> columns, List<GenericColumn> filterColumns, Dictionary<string, List<string>> dbStructure)
+        private List<GenericColumn> FilterGenericColumns(List<GenericColumn> columns, List<GenericColumn> filterColumns, InfluxDatabase dbStructure)
         {
             switch (settings.GenericFile.Filter)
             {
                 case Filters.Measurement:
-                    return columns.Where(p => dbStructure.ContainsKey(settings.GenericFile.TableName)).ToList();
+                    return columns.Where(p => dbStructure.Measurements.Any(m => m.Name == settings.GenericFile.TableName)).ToList();
                 case Filters.Field:
-                    return columns.Where(p => dbStructure.ContainsKey(settings.GenericFile.TableName) && dbStructure[settings.GenericFile.TableName].Contains(p.ColumnHeader)).ToList();
+                    return columns.Where(p => dbStructure.Measurements.Any(m => m.Name == settings.GenericFile.TableName) &&
+                    (dbStructure.Measurements.FirstOrDefault(m => m.Name == settings.GenericFile.TableName).Tags.Contains(p.ColumnHeader)
+                    || dbStructure.Measurements.FirstOrDefault(m => m.Name == settings.GenericFile.TableName).Fields.Contains(p.ColumnHeader))).ToList();
                 case Filters.Columns:
                     return columns.Where(p => filterColumns.Any(f => f.ColumnHeader == p.ColumnHeader)).ToList();
             }
@@ -316,17 +366,21 @@ namespace AdysTech.Influxer
 
             foreach (var c in columnHeaders)
             {
+
                 if (c.ColumnIndex == settings.GenericFile.TimeColumn - 1) continue;
+                var content = columns[c.ColumnIndex];
+                if (c.HasTransformations && c.CanTransform(content))
+                    content = c.Transform(content);
 
                 double value = double.NaN;
-                if (c.Type == ColumnDataType.Field)
+                if (c.Type == ColumnDataType.NumericalField)
                 {
-                    if (!Double.TryParse(columns[c.ColumnIndex], out value))
-                        throw new InvalidDataException(c.ColumnHeader + " has inconsistent data, Unable to parse \"" + columns[c.ColumnIndex] + "\" as number");
+                    if (!Double.TryParse(content, out value) || double.IsNaN(value))
+                        throw new InvalidDataException(c.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as number");
                     point.Fields.Add(c.ColumnHeader, Math.Round(value, 2));
                 }
                 else if (c.Type == ColumnDataType.Tag)
-                    point.Tags.Add(c.ColumnHeader, columns[c.ColumnIndex].Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
+                    point.Tags.Add(c.ColumnHeader, content.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
             }
 
 
