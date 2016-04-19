@@ -63,15 +63,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config\ConfigurationElementCollection.cs" />
     <Compile Include="Config\ColumnConfig.cs" />
     <Compile Include="Config\ColumnLayoutConfig.cs" />
     <Compile Include="Config\CommandLineArgAttribute.cs" />
+    <Compile Include="Config\ExtractTransformation.cs" />
     <Compile Include="Config\GenericFileConfig.cs" />
+    <Compile Include="Config\IConfigurationElementCollectionElement.cs" />
     <Compile Include="Config\InfluxDBConfig.cs" />
     <Compile Include="Config\InfluxerConfigSection.cs" />
     <Compile Include="Config\IOverridableConfig.cs" />
+    <Compile Include="Config\ITransform.cs" />
     <Compile Include="Config\OverridableConfigElement.cs" />
     <Compile Include="Config\PerfmonFileConfig.cs" />
+    <Compile Include="Config\ReplaceTransformation.cs" />
+    <Compile Include="Config\TransformationCollection.cs" />
     <Compile Include="DebugHelper.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="FailureTracker.cs" />

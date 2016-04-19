@@ -228,6 +228,15 @@ namespace AdysTech.Influxer.Config
                     if (section.GenericFile.ColumnLayout.Count == 0)
                     {
                         section.GenericFile.ColumnLayout[0] = new ColumnConfig() { NameInFile = "SampleColumn123, if this is missing column position is used", InfluxName = "Tag_ServerName", Skip = false, DataType = ColumnDataType.Tag };
+                        section.GenericFile.ColumnLayout[0].ReplaceTransformations[0] = new ReplaceTransformation() { FindText = "Text to find", ReplaceWith = "will be replaced" };
+
+                        section.GenericFile.ColumnLayout[1] = new ColumnConfig() { NameInFile = "SampleColumn123, if this is missing column position is used", InfluxName = "Tag_Region", Skip = false, DataType = ColumnDataType.Tag };
+                        section.GenericFile.ColumnLayout[1].ExtractTransformations[0] = new ExtractTransformation() { Type = ExtractType.RegEx, RegEx= @"(\d+)x(\d+)"};
+
+
+                        section.GenericFile.ColumnLayout[2] = new ColumnConfig() { NameInFile = "SampleColumn123, if this is missing column position is used", InfluxName = "Tag_Transaction", Skip = false, DataType = ColumnDataType.Tag };
+                        section.GenericFile.ColumnLayout[2].ExtractTransformations[0] = new ExtractTransformation() { Type = ExtractType.SubString, StartIndex = 0, Length = 10 };
+
                     }
                 }
                 #endregion

@@ -12,10 +12,11 @@ namespace AdysTech.Influxer.Config
         Unknown = 0,
         Timestamp,
         Tag,
-        Field
+        NumericalField,
+        StringField
     }
 
-    public class ColumnConfig : ConfigurationElement
+    public class ColumnConfig : ConfigurationElement, IConfigurationElementCollectionElement
     {
 
 
@@ -46,5 +47,27 @@ namespace AdysTech.Influxer.Config
             get { return (ColumnDataType)this["DataType"]; }
             set { this["DataType"] = value; }
         }
+
+        [ConfigurationProperty("ReplaceTransformations")]
+        public ReplaceTransformationCollection ReplaceTransformations
+        {
+            get { return (ReplaceTransformationCollection)this["ReplaceTransformations"]; }
+            set { this["ReplaceTransformations"] = value; }
+        }
+
+        [ConfigurationProperty("ExtractTransformations")]
+        public ExtractTransformationCollection ExtractTransformations
+        {
+            get { return (ExtractTransformationCollection)this["ExtractTransformations"]; }
+            set { this["ExtractTransformations"] = value; }
+        }
+
+        public string GetKey()
+        {
+            return InfluxName;
+        }
+
+
+      
     }
 }
