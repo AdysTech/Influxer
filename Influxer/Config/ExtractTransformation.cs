@@ -47,6 +47,20 @@ namespace AdysTech.Influxer.Config
             set { this["RegEx"] = value; }
         }
 
+        [ConfigurationProperty("IsDefault")]
+        public bool IsDefault
+        {
+            get { return (bool)this["IsDefault"]; }
+            set { this["IsDefault"] = value; }
+        }
+
+        [ConfigurationProperty("DefaultValue")]
+        public string DefaultValue
+        {
+            get { return (string)this["DefaultValue"]; }
+            set { this["DefaultValue"] = value; }
+        }
+
         Regex _extractPattern;
         public Regex ExtractPattern
         {
@@ -64,6 +78,7 @@ namespace AdysTech.Influxer.Config
 
         public  bool CanTransform(string content)
         {
+            if (IsDefault) return true;
             if (Type == ExtractType.SubString)
                 return !String.IsNullOrWhiteSpace(content) ? content.Length > StartIndex && content.Length > (StartIndex + Length) : false;
             else
@@ -73,6 +88,7 @@ namespace AdysTech.Influxer.Config
 
         public  string Transform(string content)
         {
+            if (IsDefault) return DefaultValue;
             if (Type == ExtractType.SubString)
                 return content.Substring(StartIndex, Length);
             else

@@ -79,5 +79,13 @@ namespace AdysTech.Influxer.Config
             get { return (ColumnLayoutConfig)this["ColumnLayout"]; }
             set { this["ColumnLayout"] = value; }
         }
+
+        [CommandLineArgAttribute ("-ignoreerrors", Usage = "-ignoreerrors true", Description = "Ignore too many errors due to invalid data or config file")]
+        [ConfigurationProperty ("IgnoreErrors")]
+        public bool IgnoreErrors
+        {
+            get { return (bool) this["IgnoreErrors"]; }
+            set { this["IgnoreErrors"] = value; }
+        }
     }
 }

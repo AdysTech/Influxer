@@ -13,7 +13,8 @@ namespace AdysTech.Influxer.Config
         Timestamp,
         Tag,
         NumericalField,
-        StringField
+        StringField,
+        BooleanField
     }
 
     public class ColumnConfig : ConfigurationElement, IConfigurationElementCollectionElement
@@ -62,12 +63,41 @@ namespace AdysTech.Influxer.Config
             set { this["ExtractTransformations"] = value; }
         }
 
+        [ConfigurationProperty ("FilterTransformations")]
+        public FilterTransformationCollection FilterTransformations
+        {
+            get { return (FilterTransformationCollection) this["FilterTransformations"]; }
+            set { this["FilterTransformations"] = value; }
+        }
+
+        [ConfigurationProperty("Split")]
+        public Splitter SplitConfig
+        {
+            get { return (Splitter)this["Split"]; }
+            set { this["Split"] = value; }
+        }
+
+        [ConfigurationProperty ("IsDefault")]
+        public bool IsDefault
+        {
+            get { return (bool) this["IsDefault"]; }
+            set { this["IsDefault"] = value; }
+        }
+
         public string GetKey()
         {
             return InfluxName;
         }
 
+        protected override void PostDeserialize()
+        {
+            base.PostDeserialize();
+            if (SplitConfig.SubColumnsConfig.Count>0 && (ExtractTransformations?.Count > 0 ||
+                                                ReplaceTransformations?.Count > 0))
+            {
+                throw new ArgumentException("A Column can be split or transformed, but not both!!");
+            }
+        }
 
-      
     }
 }

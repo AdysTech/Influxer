@@ -15,6 +15,7 @@ using System.Net.Http.Headers;
 using AdysTech.InfluxDB.Client.Net;
 using System.Configuration;
 using AdysTech.Influxer.Config;
+using AdysTech.Influxer.Logging;
 
 namespace AdysTech.Influxer
 {
@@ -35,36 +36,27 @@ namespace AdysTech.Influxer
 
         private static InfluxerConfigSection settings;
 
-        static int Main(string[] args)
+        static int Main (string[] args)
         {
-
-            if ( Debugger.IsAttached )
-            {
-                Console.SetError (new DebugHelper ());
-                Console.SetOut (new DebugHelper ());
-            }
-
+            
             #region Command Line argument processing
-            if ( args.Length == 0 )
+            if (args.Length == 0)
             {
-                Console.WriteLine ("Command line arguments not valid, try --help to see valid ones!");
+                Logger.LogLine (LogLevel.Info, "Command line arguments not valid, try --help to see valid ones!");
                 return (int) ExitCode.InvalidArgument;
             }
             #region Parse command line arguments
             Dictionary<string, string> cmdArgs = new Dictionary<string, string> ();
-            for ( int i = 0; i < args.Length; i++ )
+            for (int i = 0; i < args.Length; i++)
             {
-                if ( args[i].StartsWith ("-") || args[i].StartsWith ("/") )
+                if (args[i].StartsWith ("-") || args[i].StartsWith ("/"))
                 {
                     var key = args[i].ToLower ();
-                    if ( i == args.Length - 1 )
+                    if ((i + 1 < args.Length) && (!(args[i + 1].StartsWith ("-") || args[i + 1].StartsWith ("/"))))
                     {
-                        cmdArgs.Add (key, "true");
-                        break;
+                        cmdArgs.Add (key.ToLower (), args[i + 1]);
+                        i++;
                     }
-                    i++;
-                    if ( !( args[i].StartsWith ("-") || args[i].StartsWith ("/") ) )
-                        cmdArgs.Add (key.ToLower (), args[i]);
                     else
                         cmdArgs.Add (key.ToLower (), "true");
                 }
@@ -72,7 +64,7 @@ namespace AdysTech.Influxer
 
             var totalArguments = cmdArgs.Count;
 
-            if ( cmdArgs.ContainsKey ("--help") || cmdArgs.ContainsKey ("/help") || cmdArgs.ContainsKey ("/?") )
+            if (cmdArgs.ContainsKey ("--help") || cmdArgs.ContainsKey ("/help") || cmdArgs.ContainsKey ("/?"))
             {
                 var help = new StringBuilder ();
                 help.AppendLine ("Influxer is an application to parse log files, push data to Influx for later visualization.");
@@ -89,23 +81,24 @@ namespace AdysTech.Influxer
                 help.AppendLine ("Any configuration entries can be overridden by command line switches shown below\n");
                 help.AppendLine (new String ('-', 180));
                 help.Append (InfluxerConfigSection.LoadDefault ().PrintHelpText ());
-                Console.Write (help.ToString ());
+                Logger.Log (LogLevel.Info, help.ToString ());
                 return (int) ExitCode.Success;
             }
 
 
-            if ( cmdArgs.ContainsKey ("-config") )
+            if (cmdArgs.ContainsKey ("-config"))
             {
                 try
                 {
                     var configFile = Path.GetFullPath (cmdArgs["-config"]);
                     settings = InfluxerConfigSection.Load (configFile);
                     cmdArgs.Remove ("-config");
+                    totalArguments -= 1;
                 }
-                catch ( Exception e )
+                catch (Exception e)
                 {
-                    Console.Error.WriteLine ("Error with config file:{0},{1}", e.GetType ().Name, e.Message);
-                    Console.WriteLine ("Problem loading config file, regenerate it with /config option");
+                    Logger.LogLine (LogLevel.Error, "Error with config file:{0},{1}", e.GetType ().Name, e.Message);
+                    Logger.LogLine (LogLevel.Info, "Problem loading config file, regenerate it with /config option");
                     return (int) ExitCode.InvalidFilename;
                 }
             }
@@ -115,45 +108,55 @@ namespace AdysTech.Influxer
             }
             #endregion
 
-            if (totalArguments > 1)
+            if (totalArguments >= 1)
             {
-                try
+                if (!(cmdArgs.Count == 1 && cmdArgs.ContainsKey ("/export")))
                 {
-                    if (!settings.ProcessCommandLineArguments(cmdArgs))
+                    try
                     {
-                        Console.Error.WriteLine("Invalid commandline arguments!! Use /help to see valid ones");
-                        return (int)ExitCode.InvalidArgument;
+                        if (!settings.ProcessCommandLineArguments (cmdArgs))
+                        {
+                            Logger.LogLine (LogLevel.Error, "Invalid commandline arguments!! Use /help to see valid ones");
+                            return (int) ExitCode.InvalidArgument;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogLine (LogLevel.Error, "Error processing arguments {0}: {1}", e.GetType ().Name, e.Message);
+                        return (int) ExitCode.InvalidArgument;
                     }
                 }
-                catch (Exception e)
+            }
+
+            if (cmdArgs.ContainsKey ("/export"))
+            {
+                if (cmdArgs.ContainsKey ("/autolayout"))
                 {
-                    Console.Error.WriteLine("Error processing arguments {0}: {1}", e.GetType().Name, e.Message);
-                    return (int)ExitCode.InvalidArgument;
+                    if (string.IsNullOrWhiteSpace (settings.InputFileName))
+                        throw new ArgumentException ("No Input file name mentioned!!");
+
+                    var g = new GenericFile ();
+                    g.GetFileLayout (settings.InputFileName);
+                    g.ValidateData (settings.InputFileName);
                 }
-            }
-
-            if (cmdArgs.ContainsKey("/export"))
-            {
-                InfluxerConfigSection.Export(Console.OpenStandardOutput(), totalArguments > 1 ? false : true);
-                return (int)ExitCode.Success;
+                InfluxerConfigSection.Export (Console.OpenStandardOutput (), totalArguments > 1 ? false : true);
+                return (int) ExitCode.Success;
             }
 
 
-            if ( cmdArgs.Count > 0 )
+            if (cmdArgs.Count > 0)
             {
-                Console.Error.WriteLine ("Unknown command line arguments: {0}", String.Join (", ", cmdArgs.Select (c => c.Key)));
+                Logger.LogLine (LogLevel.Error, "Unknown command line arguments: {0}", String.Join (", ", cmdArgs.Select (c => c.Key)));
                 return (int) ExitCode.InvalidArgument;
             }
 
             #endregion
 
-
-
             #region Validate inputs
 
-            if ( String.IsNullOrWhiteSpace (settings.InputFileName) )
+            if (String.IsNullOrWhiteSpace (settings.InputFileName))
             {
-                Console.Error.WriteLine ("Input File Name is not specified!! Can't continue");
+                Logger.LogLine (LogLevel.Error, "Input File Name is not specified!! Can't continue");
                 return (int) ExitCode.InvalidArgument;
             }
 
@@ -161,29 +164,30 @@ namespace AdysTech.Influxer
             {
                 settings.InputFileName = Path.GetFullPath (settings.InputFileName);
             }
-            catch ( Exception e )
+            catch (Exception e)
             {
-                Console.Error.WriteLine ("Error with input file:{0},{1}", e.GetType ().Name, e.Message);
-                Console.WriteLine ("Problem with inputfile name, check path");
+                Logger.LogLine (LogLevel.Error, "Error with input file:{0},{1}", e.GetType ().Name, e.Message);
+                Logger.LogLine (LogLevel.Info, "Problem with inputfile name, check path");
                 return (int) ExitCode.InvalidFilename;
             }
 
 
-            if ( String.IsNullOrWhiteSpace (settings.InfluxDB.InfluxUri) )
+
+            if (String.IsNullOrWhiteSpace (settings.InfluxDB.InfluxUri))
             {
-                Console.Error.WriteLine ("Influx DB Uri is not configured!!");
+                Logger.LogLine (LogLevel.Error, "Influx DB Uri is not configured!!");
                 return (int) ExitCode.InvalidArgument;
             }
 
-            if ( String.IsNullOrWhiteSpace (settings.InfluxDB.DatabaseName) )
+            if (String.IsNullOrWhiteSpace (settings.InfluxDB.DatabaseName))
             {
-                Console.Error.WriteLine ("Influx DB name is not configured!!");
+                Logger.LogLine (LogLevel.Error, "Influx DB name is not configured!!");
                 return (int) ExitCode.InvalidArgument;
             }
 
             #endregion
 
-            ExitCode result = ExitCode.UnknownError;
+            ProcessStatus result = new ProcessStatus () { ExitCode = ExitCode.UnknownError };
             try
             {
                 Stopwatch stopwatch = new Stopwatch ();
@@ -191,62 +195,62 @@ namespace AdysTech.Influxer
 
                 var client = new InfluxDBClient (settings.InfluxDB.InfluxUri, settings.InfluxDB.UserName, settings.InfluxDB.Password);
 
-                if ( !VerifyDatabaseAsync (client, settings.InfluxDB.DatabaseName).Result )
+                if (!VerifyDatabaseAsync (client, settings.InfluxDB.DatabaseName).Result)
                 {
-                    Console.WriteLine ("Unable to create DB {0}", settings.InfluxDB.DatabaseName);
+                    Logger.LogLine (LogLevel.Info, "Unable to create DB {0}", settings.InfluxDB.DatabaseName);
                     return (int) ExitCode.UnableToProcess;
                 }
-                switch ( settings.FileFormat )
+                switch (settings.FileFormat)
                 {
                     case FileFormats.Perfmon:
                         result = new PerfmonFile ().ProcessPerfMonLog (settings.InputFileName, client).Result;
                         break;
                     case FileFormats.Generic:
-                        if ( String.IsNullOrWhiteSpace (settings.GenericFile.TableName) )
+                        if (String.IsNullOrWhiteSpace (settings.GenericFile.TableName))
                             throw new ArgumentException ("Generic format needs TableName input");
                         result = new GenericFile ().ProcessGenericFile (settings.InputFileName, settings.GenericFile.TableName, client).Result;
                         break;
                 }
 
                 stopwatch.Stop ();
-                Console.WriteLine ("\n Finished!! Processed in {0}", stopwatch.Elapsed.ToString ());
+                Logger.LogLine (LogLevel.Info, "\n Finished!! Processed {0} points (Success: {1}, Failed:{2}) in {3}", result.PointsFound, result.PointsProcessed, result.PointsFailed, stopwatch.Elapsed.ToString ());
 
             }
 
-            catch ( AggregateException e )
+            catch (AggregateException e)
             {
-                Console.Error.WriteLine ("Error!! {0}:{1} - {2}", e.InnerException.GetType ().Name, e.InnerException.Message, e.InnerException.StackTrace);
+                Logger.LogLine (LogLevel.Error, "Error!! {0}:{1} - {2}", e.InnerException.GetType ().Name, e.InnerException.Message, e.InnerException.StackTrace);
             }
 
-            catch ( Exception e )
+            catch (Exception e)
             {
-                Console.Error.WriteLine ("Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
+                Logger.LogLine (LogLevel.Error, "Error!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
             }
-            return (int) result;
+            return (int) result.ExitCode;
         }
 
-        private static async Task<bool> VerifyDatabaseAsync(InfluxDBClient client, string DBName)
+        private static async Task<bool> VerifyDatabaseAsync (InfluxDBClient client, string DBName)
         {
             try
             {
                 //verify DB exists, create if not
                 var dbNames = await client.GetInfluxDBNamesAsync ();
-                if ( dbNames.Contains (DBName) )
+                if (dbNames.Contains (DBName))
                     return true;
                 else
                 {
                     var filter = settings.FileFormat == FileFormats.Perfmon ? settings.PerfmonFile.Filter : settings.GenericFile.Filter;
-                    if ( filter == Filters.Measurement || filter == Filters.Field )
+                    if (filter == Filters.Measurement || filter == Filters.Field)
                     {
-                        Console.WriteLine ("Measurement/Field filtering is not applicable for new database!!");
+                        Logger.LogLine (LogLevel.Info, "Measurement/Field filtering is not applicable for new database!!");
                         filter = Filters.None;
                     }
                     return await client.CreateDatabaseAsync (DBName);
                 }
             }
-            catch ( Exception e )
+            catch (Exception e)
             {
-                Console.WriteLine ("Unexpected exception of type {0} caught: {1}",
+                Logger.LogLine (LogLevel.Info, "Unexpected exception of type {0} caught: {1}",
                             e.GetType (), e.Message);
             }
             return false;
