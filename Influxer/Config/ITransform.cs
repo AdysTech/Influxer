@@ -10,5 +10,9 @@ namespace AdysTech.Influxer.Config
     {
         bool CanTransform(string content);
         string Transform(string content);
+        bool IsDefault { get; set; }
+        string DefaultValue { get; set; }
     }
+
+
 }

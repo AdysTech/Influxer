@@ -24,9 +24,25 @@ namespace AdysTech.Influxer.Config
             set { this["ReplaceWith"] = value; }
         }
 
-
-        public  bool CanTransform(string content)
+        [ConfigurationProperty("IsDefault")]
+        public bool IsDefault
         {
+            get { return (bool)this["IsDefault"]; }
+            set { this["IsDefault"] = value; }
+        }
+
+        [ConfigurationProperty("DefaultValue")]
+        public string DefaultValue
+        {
+            get { return (string)this["DefaultValue"]; }
+            set { this["DefaultValue"] = value; }
+        }
+
+
+
+        public bool CanTransform(string content)
+        {
+            if (IsDefault) return true;
             return !String.IsNullOrWhiteSpace(content) ? content.Contains(FindText) : false;
         }
 
@@ -37,6 +53,7 @@ namespace AdysTech.Influxer.Config
 
         public  string Transform(string content)
         {
+            if (IsDefault) return DefaultValue;
             return content.Replace(FindText, ReplaceWith);
         }
     }
