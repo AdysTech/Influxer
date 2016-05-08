@@ -148,7 +148,7 @@ namespace AdysTech.Influxer
                 result.Add (_generatedColumns.FirstOrDefault (t => t.Config.IsDefault), content);
             }
             else
-                throw new InvalidDataException (String.Format ("Can't split {0} using specified splitting rules, no default column configured", content));
+                throw new InvalidDataException ($"Can't split {content} using specified splitting rules, no default column configured");
             return result;
         }
 

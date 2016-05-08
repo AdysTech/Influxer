@@ -87,7 +87,7 @@ namespace AdysTech.Influxer
                         {
                             policy = new InfluxRetentionPolicy ()
                             {
-                                Name = String.IsNullOrWhiteSpace (settings.InfluxDB.RetentionPolicy) ? String.Format ("InfluxerRetention_{0}min", settings.InfluxDB.RetentionDuration) : settings.InfluxDB.RetentionPolicy,
+                                Name = String.IsNullOrWhiteSpace (settings.InfluxDB.RetentionPolicy) ? $"InfluxerRetention_{settings.InfluxDB.RetentionDuration}min" : settings.InfluxDB.RetentionPolicy,
                                 DBName = settings.InfluxDB.DatabaseName,
                                 Duration = TimeSpan.FromMinutes (settings.InfluxDB.RetentionDuration),
                                 IsDefault = false,
@@ -222,7 +222,7 @@ namespace AdysTech.Influxer
                 {
                     Logger.LogLine (LogLevel.Error, "Process Started {0}, Input {1}, Processed{2}, Failed:{3}", (DateTime.Now - stopwatch.Elapsed), InputFileName, result.PointsFound, result.PointsFailed);
                     foreach (var f in failureReasons.Values)
-                        Logger.LogLine (LogLevel.Error, "{0} lines ({1}) failed due to {2} ({3})", f.Count, String.Join (",", f.LineNumbers), f.ExceptionType, f.Message);
+                        Logger.LogLine (LogLevel.Error, "{0} lines (e.g. {1}) failed due to {2} ({3})", f.Count, String.Join (",", f.LineNumbers.Take (5)), f.ExceptionType, f.Message);
                     if (result.PointsFailed == result.PointsFound)
                         result.ExitCode = ExitCode.UnableToProcess;
                     else
@@ -234,9 +234,8 @@ namespace AdysTech.Influxer
             {
                 Logger.LogLine (LogLevel.Error, "Failed to process {0}", InputFileName);
                 Logger.LogLine (LogLevel.Error, "\r\nError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
-                result.ExitCode = ExitCode.UnknownError;
+                result.ExitCode = ExitCode.UnableToProcess;
             }
-            result.ExitCode = ExitCode.Success;
             return result;
         }
 
@@ -317,14 +316,7 @@ namespace AdysTech.Influxer
                 foreach (var c in ColumnHeaders)
                 {
 
-                    if (c.ColumnIndex == settings.GenericFile.TimeColumn - 1) continue;
                     var content = columns[c.ColumnIndex].Replace ("\"", "");
-                    if (c.ColumnIndex == settings.GenericFile.TimeColumn - 1)
-                    {
-                        DateTime timeStamp;
-                        if (!DateTime.TryParseExact (content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
-                            throw new FormatException ("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
-                    }
                     if (c.HasAutoGenColumns)
                     {
                         pointData.AddRange (c.SplitData (content));
@@ -350,6 +342,12 @@ namespace AdysTech.Influxer
                         continue;
                     }
 
+                    if (d.Key.ColumnIndex == settings.GenericFile.TimeColumn - 1)
+                    {
+                        DateTime timeStamp;
+                        if (!DateTime.TryParseExact (content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
+                            throw new FormatException ("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
+                    }
 
                     if (String.IsNullOrWhiteSpace (content))
                         continue;
@@ -366,9 +364,9 @@ namespace AdysTech.Influxer
                     else
                     {
                         if (d.Key.Type == ColumnDataType.NumericalField && (!Double.TryParse (content, out value) || double.IsNaN (value)))
-                            throw new InvalidDataException (String.Format ("{0} has inconsistent data, Can't parse {1} as Number", d.Key.ColumnHeader, content));
+                            throw new InvalidDataException ($"{d.Key.ColumnHeader} has inconsistent data, Can't parse {content} as Number");
                         else if (d.Key.Type == ColumnDataType.BooleanField && (!Boolean.TryParse (content, out boolVal)))
-                            throw new InvalidDataException (String.Format ("{0} has inconsistent data, Can't parse {1} as Boolean", d.Key.ColumnHeader, content));
+                            throw new InvalidDataException ($"{d.Key.ColumnHeader} has inconsistent data, Can't parse {content} as Boolean");
                     }
                 }
                 if (++lineNo == settings.GenericFile.ValidateRows)
@@ -413,10 +411,6 @@ namespace AdysTech.Influxer
             point.Precision = settings.GenericFile.Precision;
             point.MeasurementName = settings.GenericFile.TableName;
 
-            DateTime timeStamp;
-            if (!DateTime.TryParseExact (content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
-                throw new FormatException ("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
-            point.UtcTimestamp = timeStamp.AddMinutes (settings.GenericFile.UtcOffset);
 
             point.InitializeTags (defaultTags);
 
@@ -443,32 +437,44 @@ namespace AdysTech.Influxer
                 content = d.Value;
                 if (d.Key.HasTransformations && d.Key.CanTransform (content))
                     content = d.Key.Transform (d.Value);
+
                 if (String.IsNullOrWhiteSpace (content)) continue;
-                double value = double.NaN; bool boolVal = false;
-                if (d.Key.Type == ColumnDataType.NumericalField)
+
+                if (d.Key.ColumnIndex == settings.GenericFile.TimeColumn - 1)
                 {
-                    if (!Double.TryParse (content, out value) || double.IsNaN (value))
-                        throw new InvalidDataException (d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as number");
-                    point.Fields.Add (d.Key.ColumnHeader, new InfluxValueField (Math.Round (value, 2)));
+                    DateTime timeStamp;
+                    if (!DateTime.TryParseExact (content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
+                        throw new FormatException ("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
+                    point.UtcTimestamp = timeStamp.AddMinutes (settings.GenericFile.UtcOffset);
                 }
-                else if (d.Key.Type == ColumnDataType.StringField)
+                else
                 {
-                    point.Fields.Add (d.Key.ColumnHeader, new InfluxValueField (content));
+                    double value = double.NaN; bool boolVal = false;
+                    if (d.Key.Type == ColumnDataType.NumericalField)
+                    {
+                        if (!Double.TryParse (content, out value) || double.IsNaN (value))
+                            throw new InvalidDataException (d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as number");
+                        point.Fields.Add (d.Key.ColumnHeader, new InfluxValueField (Math.Round (value, 2)));
+                    }
+                    else if (d.Key.Type == ColumnDataType.StringField)
+                    {
+                        point.Fields.Add (d.Key.ColumnHeader, new InfluxValueField (content));
+                    }
+                    else if (d.Key.Type == ColumnDataType.BooleanField)
+                    {
+                        if (!Boolean.TryParse (content, out boolVal))
+                            throw new InvalidDataException (d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as Boolean");
+                        point.Fields.Add (d.Key.ColumnHeader, new InfluxValueField (boolVal));
+                    }
+                    else if (d.Key.Type == ColumnDataType.Tag)
+                        point.Tags.Add (d.Key.ColumnHeader, content.Replace (settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray (), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
                 }
-                else if (d.Key.Type == ColumnDataType.BooleanField)
-                {
-                    if (!Boolean.TryParse (content, out boolVal))
-                        throw new InvalidDataException (d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as Boolean");
-                    point.Fields.Add (d.Key.ColumnHeader, new InfluxValueField (boolVal));
-                }
-                else if (d.Key.Type == ColumnDataType.Tag)
-                    point.Tags.Add (d.Key.ColumnHeader, content.Replace (settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray (), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
             }
 
 
             if (point.Fields.Count == 0)
                 throw new InvalidDataException ("No values found on the row to post to Influx");
-                
+
             return point;
         }
     }
