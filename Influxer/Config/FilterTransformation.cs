@@ -60,7 +60,7 @@ namespace AdysTech.Influxer.Config
         {
             if (CanTransform (content))
             {
-                throw new InvalidDataException (String.Format ("{0} filtered out as per rule {1}", content, RegEx));
+                throw new InvalidDataException ($"{content} filtered out as per rule {RegEx}");
             }
             return string.Empty;
         }

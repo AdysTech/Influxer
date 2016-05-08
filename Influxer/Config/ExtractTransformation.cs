@@ -14,50 +14,57 @@ namespace AdysTech.Influxer.Config
         SubString
     }
 
-    public class ExtractTransformation :ConfigurationElement, ITransform,IConfigurationElementCollectionElement
+    public class ExtractTransformation : ConfigurationElement, ITransform, IConfigurationElementCollectionElement
     {
 
-        [ConfigurationProperty("Type")]
+        [ConfigurationProperty ("Type")]
         public ExtractType Type
         {
-            get { return (ExtractType)this["Type"]; }
+            get { return (ExtractType) this["Type"]; }
             set { this["Type"] = value; }
         }
 
-        [ConfigurationProperty("StartIndex")]
+        [ConfigurationProperty ("StartIndex")]
         public int StartIndex
         {
-            get { return (int)this["StartIndex"]; }
+            get { return (int) this["StartIndex"]; }
             set { this["StartIndex"] = value; }
         }
 
 
-        [ConfigurationProperty("Length")]
+        [ConfigurationProperty ("Length")]
         public int Length
         {
-            get { return (int)this["Length"]; }
+            get { return (int) this["Length"]; }
             set { this["Length"] = value; }
         }
 
 
-        [ConfigurationProperty("RegEx")]
+        [ConfigurationProperty ("RegEx")]
         public string RegEx
         {
-            get { return (string)this["RegEx"]; }
+            get { return (string) this["RegEx"]; }
             set { this["RegEx"] = value; }
         }
 
-        [ConfigurationProperty("IsDefault")]
+        [ConfigurationProperty ("ResultPattern")]
+        public string ResultPattern
+        {
+            get { return (string) this["ResultPattern"]; }
+            set { this["ResultPattern"] = value; }
+        }
+
+        [ConfigurationProperty ("IsDefault")]
         public bool IsDefault
         {
-            get { return (bool)this["IsDefault"]; }
+            get { return (bool) this["IsDefault"]; }
             set { this["IsDefault"] = value; }
         }
 
-        [ConfigurationProperty("DefaultValue")]
+        [ConfigurationProperty ("DefaultValue")]
         public string DefaultValue
         {
-            get { return (string)this["DefaultValue"]; }
+            get { return (string) this["DefaultValue"]; }
             set { this["DefaultValue"] = value; }
         }
 
@@ -66,45 +73,57 @@ namespace AdysTech.Influxer.Config
         {
             get
             {
-                if (Type == ExtractType.RegEx && _extractPattern == null && !String.IsNullOrWhiteSpace(RegEx))
+                if (Type == ExtractType.RegEx && _extractPattern == null && !String.IsNullOrWhiteSpace (RegEx))
                 {
-                    _extractPattern = new Regex(RegEx, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                    _extractPattern = new Regex (RegEx, RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 }
                 return _extractPattern;
             }
         }
 
- 
 
-        public  bool CanTransform(string content)
+
+        public bool CanTransform (string content)
         {
             if (IsDefault) return true;
             if (Type == ExtractType.SubString)
-                return !String.IsNullOrWhiteSpace(content) ? content.Length > StartIndex && content.Length > (StartIndex + Length) : false;
+                return !String.IsNullOrWhiteSpace (content) ? content.Length > StartIndex && content.Length > (StartIndex + Length) : false;
             else
-                return !String.IsNullOrWhiteSpace(content) ? _extractPattern.IsMatch(content) : false;
+                return !String.IsNullOrWhiteSpace (content) ? ExtractPattern.IsMatch (content) : false;
 
         }
 
-        public  string Transform(string content)
+        public string Transform (string content)
         {
             if (IsDefault) return DefaultValue;
             if (Type == ExtractType.SubString)
-                return content.Substring(StartIndex, Length);
+                return content.Substring (StartIndex, Length);
             else
             {
-                var m = _extractPattern.Match(content);
+
+                var m = ExtractPattern.Match (content);
                 if (m.Success)
                 {
-                    return m.Groups[1].Value;
+                    try
+                    {
+                        if (ResultPattern == "")
+                            return m.Groups[0].Value;
+                        else
+                            return string.Format (ResultPattern, m.Groups.Cast<Group> ().Skip (1).Select (g => g.Value as object).ToArray ());
+
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ArgumentException ($"Could not extract {content} using {ResultPattern} due to {e.Message}");
+                    }
                 }
-                return null;
             }
+            return null;
         }
 
-        public string GetKey()
+        public string GetKey ()
         {
-            return this.GetHashCode().ToString();
+            return this.GetHashCode ().ToString ();
         }
     }
 }

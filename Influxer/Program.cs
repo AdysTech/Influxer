@@ -38,7 +38,7 @@ namespace AdysTech.Influxer
 
         static int Main (string[] args)
         {
-            
+
             #region Command Line argument processing
             if (args.Length == 0)
             {
@@ -47,12 +47,13 @@ namespace AdysTech.Influxer
             }
             #region Parse command line arguments
             Dictionary<string, string> cmdArgs = new Dictionary<string, string> ();
+            Regex commandSwitch = new Regex ("^-[a-zA-Z+]|^/[a-zA-Z+]", RegexOptions.Compiled);
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i].StartsWith ("-") || args[i].StartsWith ("/"))
+                if (commandSwitch.IsMatch (args[i]))
                 {
                     var key = args[i].ToLower ();
-                    if ((i + 1 < args.Length) && (!(args[i + 1].StartsWith ("-") || args[i + 1].StartsWith ("/"))))
+                    if (i + 1 < args.Length && !commandSwitch.IsMatch (args[i + 1]))
                     {
                         cmdArgs.Add (key.ToLower (), args[i + 1]);
                         i++;
