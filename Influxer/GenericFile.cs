@@ -419,7 +419,6 @@ namespace AdysTech.Influxer
             foreach (var c in columnHeaders)
             {
 
-                if (c.ColumnIndex == settings.GenericFile.TimeColumn - 1) continue;
                 content = columns[c.ColumnIndex].Replace ("\"", "");
 
                 if (c.HasAutoGenColumns)
