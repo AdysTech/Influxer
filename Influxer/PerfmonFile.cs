@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace AdysTech.Influxer
 {
-    class PerfmonFile
+    public class PerfmonFile
     {
         private InfluxerConfigSection settings;
         private Regex pattern;
@@ -205,7 +205,10 @@ namespace AdysTech.Influxer
                         result.ExitCode = ExitCode.ProcessedWithErrors;
                 }
                 else
+                {
+                    result.ExitCode = ExitCode.Success;
                     Logger.LogLine (LogLevel.Info, "\n Done!! Processed:- {0} lines, {1} points", linesProcessed, result.PointsFound);
+                }
             }
 
             catch (Exception e)
@@ -214,7 +217,7 @@ namespace AdysTech.Influxer
                 Logger.LogLine (LogLevel.Error, "\r\nError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
                 result.ExitCode = ExitCode.UnknownError;
             }
-            result.ExitCode = ExitCode.Success;
+            
             return result;
         }
 
@@ -263,37 +266,58 @@ namespace AdysTech.Influxer
 
             var points = new List<IInfluxDatapoint> ();
 
-            foreach (var group in perfGroup)
+            foreach (var performanceObject in perfGroup)
             {
-                foreach (var hostGrp in group.GroupBy (p => p.Host))
+                foreach (var hostGrp in performanceObject.GroupBy (p => p.Host))
                 {
-                    var point = new InfluxDatapoint<double> ();
-                    if (defaultTags.Count > 0) point.InitializeTags (defaultTags);
-                    point.Tags.Add ("Host", hostGrp.Key);
-                    point.MeasurementName = group.Key;
-                    point.UtcTimestamp = utcTime;
-
-                    double value = 0.0;
-
-                    foreach (var counter in hostGrp)
+                    if (settings.PerfmonFile.MultiMeasurements)
                     {
-                        if (!String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value))
-                        {
-                            //Perfmon file can have duplicate columns!!
-                            if (point.Fields.ContainsKey (counter.CounterName))
-                                point.Fields[counter.CounterName] = value;
-                            else
-                                point.Fields.Add (counter.CounterName, value);
+                        var point = new InfluxDatapoint<double> ();
+                        if (defaultTags.Count > 0) point.InitializeTags (defaultTags);
+                        point.Tags.Add ("Host", hostGrp.Key);
 
+
+                        point.MeasurementName = performanceObject.Key;
+                        point.UtcTimestamp = utcTime;
+
+                        double value = 0.0;
+
+                        foreach (var counter in hostGrp)
+                        {
+                            if (!String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value))
+                            {
+                                //Perfmon file can have duplicate columns!!
+                                if (point.Fields.ContainsKey (counter.CounterName))
+                                    point.Fields[counter.CounterName] = value;
+                                else
+                                    point.Fields.Add (counter.CounterName, value);
+                            }
+                        }
+                        if (point.Fields.Count > 0)
+                            points.Add (point);
+                    }
+                    else
+                    {
+                        foreach (var counter in hostGrp)
+                        {
+                            double value = 0.0;
+                            if (!String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value))
+                            {
+                                var point = new InfluxDatapoint<double> ();
+                                if (defaultTags.Count > 0) point.InitializeTags (defaultTags);
+                                point.Tags.Add ("Host", hostGrp.Key);
+                                point.MeasurementName = settings.InfluxDB.Measurement;
+                                point.UtcTimestamp = utcTime;
+                                point.Tags.Add ("PerformanceObject", counter.PerformanceObject);
+                                point.Tags.Add ("PerformanceCounter", counter.CounterName);
+                                point.Fields.Add ("CounterValue", value);
+                                points.Add (point);
+                            }
                         }
                     }
-                    if (point.Fields.Count > 0)
-                        points.Add (point);
                 }
             }
-
             return points;
-
         }
 
     }
