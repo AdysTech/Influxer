@@ -73,6 +73,13 @@ namespace AdysTech.Influxer.Config
             set { this["RetentionPolicy"] = value; }
         }
 
+        [CommandLineArgAttribute ("-table", Usage = "-table <table name>", Description = "Measurement name in InfluxDB", DefaultValue = "InfluxerData")]
+        [ConfigurationProperty ("Measurement", DefaultValue = "InfluxerData")]
+        public string Measurement
+        {
+            get { return (string) this["Measurement"]; }
+            set { this["Measurement"] = value; }
+        }
 
     }
 

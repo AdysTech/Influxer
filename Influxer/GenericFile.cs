@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace AdysTech.Influxer
 {
-    class GenericFile
+    public class GenericFile
     {
         private InfluxerConfigSection settings;
         private Regex pattern;
@@ -36,7 +36,7 @@ namespace AdysTech.Influxer
             }
         }
 
-        public async Task<ProcessStatus> ProcessGenericFile (string InputFileName, string tableName, InfluxDBClient client)
+        public async Task<ProcessStatus> ProcessGenericFile (string InputFileName, InfluxDBClient client)
         {
             ProcessStatus result = new ProcessStatus ();
 
@@ -228,6 +228,11 @@ namespace AdysTech.Influxer
                     else
                         result.ExitCode = ExitCode.ProcessedWithErrors;
                 }
+                else
+                {
+                    result.ExitCode = ExitCode.Success;
+                    Logger.LogLine (LogLevel.Info, "\n Done!! Processed:- {0} points", result.PointsFound);
+                }
 
             }
             catch (Exception e)
@@ -389,11 +394,11 @@ namespace AdysTech.Influxer
             switch (settings.GenericFile.Filter)
             {
                 case Filters.Measurement:
-                    return columns.Where (p => dbStructure.Measurements.Any (m => m.Name == settings.GenericFile.TableName)).ToList ();
+                    return columns.Where (p => dbStructure.Measurements.Any (m => m.Name == settings.InfluxDB.Measurement)).ToList ();
                 case Filters.Field:
-                    return columns.Where (p => dbStructure.Measurements.Any (m => m.Name == settings.GenericFile.TableName) &&
-                     (dbStructure.Measurements.FirstOrDefault (m => m.Name == settings.GenericFile.TableName).Tags.Contains (p.ColumnHeader)
-                     || dbStructure.Measurements.FirstOrDefault (m => m.Name == settings.GenericFile.TableName).Fields.Contains (p.ColumnHeader))).ToList ();
+                    return columns.Where (p => dbStructure.Measurements.Any (m => m.Name == settings.InfluxDB.Measurement) &&
+                     (dbStructure.Measurements.FirstOrDefault (m => m.Name == settings.InfluxDB.Measurement).Tags.Contains (p.ColumnHeader)
+                     || dbStructure.Measurements.FirstOrDefault (m => m.Name == settings.InfluxDB.Measurement).Fields.Contains (p.ColumnHeader))).ToList ();
                 case Filters.Columns:
                     return columns.Where (p => filterColumns.Any (f => f.ColumnHeader == p.ColumnHeader)).ToList ();
             }
@@ -409,7 +414,7 @@ namespace AdysTech.Influxer
 
             InfluxDatapoint<InfluxValueField> point = new InfluxDatapoint<InfluxValueField> ();
             point.Precision = settings.GenericFile.Precision;
-            point.MeasurementName = settings.GenericFile.TableName;
+            point.MeasurementName = settings.InfluxDB.Measurement;
 
 
             point.InitializeTags (defaultTags);
