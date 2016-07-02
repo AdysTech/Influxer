@@ -3,8 +3,13 @@ A C# console application to parse log files (currently only Windows Perfmon form
 
 [InfluxDB][1] is a very nice time series database, and is supported by many data visualizers (mainly [grafana][2]). But if you have other tools which are producing the data in csv format (mainly PerfMon in windows, or enterprise reporting tools) which are not designed for Influx era, you will have to develop own tools to pull from one tool and to push to other.
 
-Meet Influxer, a small C# console application, which will take any generic csv file or standard PerfMon csv log, and upload it to any Influx instance.
-     Supported command line arguments
+Meet Influxer, a small C# console application, which will take any text files with time series and upload it to any Influx instance.
+It has special handling for Microsoft Windows Perfmon file format. It can be configured (via command lines or by configuration files) to handle any type of text files.
+     
+####Build Status
+[![Build status](https://ci.appveyor.com/api/projects/status/x3cg8wi3m3smufx5?svg=true)](https://ci.appveyor.com/project/AdysTech/influxer)
+	 
+	 Supported command line arguments
      --help /? or /help  shows this help text
      
      
@@ -44,10 +49,6 @@ Meet Influxer, a small C# console application, which will take any generic csv f
      -TimeFormat <format>                                    Time format used in input files                                                                          Default:MM/dd/yyyy HH:mm:ss.fff
      -Precision <precision>                                  Supported:Hours<1>,Minutes<2>,Seconds<3>,MilliSeconds<4>,MicroSeconds<5>,NanoSeconds<6>                  Default:Seconds
      -filter <filter>                                        Filter input data file, Supported:Measurement (import preexisting measurements), Field (import preexisting fields), Columns (import specified columns)
-
-In case of Perfmon logs, the measurements are created at a CounterObject level, and each counters in those objects become fields. The Host name is added as tag. 
-
-In case of generic CSV, first column should have a timestamp, and each column will be loaded as a field in the measurement (similar to tables in SQL world) passed as table name.
 
   [1]: https://github.com/influxdb/influxdb
   [2]: https://github.com/grafana/grafana

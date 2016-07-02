@@ -19,7 +19,7 @@ using AdysTech.Influxer.Logging;
 
 namespace AdysTech.Influxer
 {
-    enum ExitCode : int
+    public enum ExitCode : int
     {
         Success = 0,
         InvalidArgument = 1,
@@ -207,9 +207,9 @@ namespace AdysTech.Influxer
                         result = new PerfmonFile ().ProcessPerfMonLog (settings.InputFileName, client).Result;
                         break;
                     case FileFormats.Generic:
-                        if (String.IsNullOrWhiteSpace (settings.GenericFile.TableName))
+                        if (String.IsNullOrWhiteSpace (settings.InfluxDB.Measurement))
                             throw new ArgumentException ("Generic format needs TableName input");
-                        result = new GenericFile ().ProcessGenericFile (settings.InputFileName, settings.GenericFile.TableName, client).Result;
+                        result = new GenericFile ().ProcessGenericFile (settings.InputFileName, client).Result;
                         break;
                 }
 

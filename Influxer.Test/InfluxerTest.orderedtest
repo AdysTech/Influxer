@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<OrderedTest name="InfluxerTest" storage="d:\user data\documents\visual studio 2015\console\influxer\influxer.test\influxertest.orderedtest" id="0e0f41e9-5b56-4145-b839-a7835713800a" continueAfterFailure="true" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <TestLinks>
+    <TestLink id="ce6e16aa-fe59-5389-8b3a-469fd8b2b2c8" name="TestGenericHeaderless" storage="bin\debug\influxer.test.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <TestLink id="bdd7fddf-3832-8ee3-c4ee-9d5b383ce294" name="TestPerfmonFileMultiMeasurement" storage="bin\debug\influxer.test.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <TestLink id="f60cf06c-779f-d752-a046-25667b01bac3" name="TestPerfmonFile" storage="bin\debug\influxer.test.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <TestLink id="62ec6688-0df4-dd63-e83d-d4b8020e4c56" name="TestGenericSimple" storage="bin\debug\influxer.test.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <TestLink id="b2f00e3f-5ec0-5d9a-8e68-97349bdd23ca" name="TestGenericSimple2" storage="bin\debug\influxer.test.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  </TestLinks>
+</OrderedTest>
