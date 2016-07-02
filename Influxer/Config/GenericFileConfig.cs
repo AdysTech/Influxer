@@ -9,14 +9,7 @@ namespace AdysTech.Influxer.Config
 {
     public class GenericFileConfig : PerfmonFileConfig
     {
-        [CommandLineArgAttribute ("-table", Usage = "-table <table name>", Description = "Measurement name in InfluxDB", DefaultValue = "InfluxerData")]
-        [ConfigurationProperty ("TableName", DefaultValue = "InfluxerData")]
-        public string TableName
-        {
-            get { return (string) this["TableName"]; }
-            set { this["TableName"] = value; }
-        }
-
+       
         [CommandLineArgAttribute ("-utcoffset", Usage = "-utcoffset <No of Minutes>", Description = "Offset in minutes to UTC, each line in input will be adjusted to arrive time in UTC")]
         [ConfigurationProperty ("UtcOffset", DefaultValue = 0)]
         public int UtcOffset
@@ -65,7 +58,7 @@ namespace AdysTech.Influxer.Config
             set { this["TimeColumn"] = value; }
         }
 
-        [CommandLineArgAttribute("-noheader", Usage = "-noheader true", Description = "Input file does not have column headers, configuration file should provide a column header mapping")]
+        [CommandLineArgAttribute("-noheader", Usage = "-noheader", Description = "Input file does not have column headers, configuration file should provide a column header mapping")]
         [ConfigurationProperty("HeaderMissing")]
         public bool HeaderMissing
         {

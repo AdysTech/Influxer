@@ -11,14 +11,6 @@ namespace AdysTech.Influxer.Config
 {
     public class PerfmonFileConfig : OverridableConfigElement
     {
-        [CommandLineArgAttribute ("-delimiter", Usage = "-seperator <char>", Description = "Charecter seperating Columns", DefaultValue = ",")]
-        [ConfigurationProperty ("ColumnDelimiter", DefaultValue = ",")]
-        public string ColumnDelimiter
-        {
-            get { return (string) this["ColumnDelimiter"]; }
-            set { this["ColumnDelimiter"] = value; }
-        }
-
         [CommandLineArgAttribute ("-splitter", Usage = "-splitter <regex>", Description = "RegEx used for splitting rows into columns", DefaultValue = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")]
         [ConfigurationProperty ("ColumnSplitter", DefaultValue = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")]
         public string ColumnSplitter
@@ -41,6 +33,14 @@ namespace AdysTech.Influxer.Config
         {
             get { return (TimePrecision) this["Precision"]; }
             set { this["Precision"] = value; }
+        }
+
+        [CommandLineArgAttribute ("-MultiMeasurements", Usage = "-MultiMeasurements", Description = "Push each Performance counter into their own Measurements")]
+        [ConfigurationProperty ("MultiMeasurements")]
+        public bool MultiMeasurements
+        {
+            get { return (bool) this["MultiMeasurements"]; }
+            set { this["MultiMeasurements"] = value; }
         }
 
         [ConfigurationProperty ("DefaultTags")]

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AdysTech.Influxer
 {
-    class ProcessStatus
+    public class ProcessStatus
     {
         public int PointsFound { get; set; }
         public int PointsProcessed { get; set; }

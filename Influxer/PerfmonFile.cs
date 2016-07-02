@@ -13,12 +13,13 @@ using System.Threading.Tasks;
 
 namespace AdysTech.Influxer
 {
-    class PerfmonFile
+    public class PerfmonFile
     {
         private InfluxerConfigSection settings;
         private Regex pattern;
         private Dictionary<string, string> defaultTags;
         private int minOffset;
+        InfluxRetentionPolicy policy = null;
 
         public PerfmonFile ()
         {
@@ -87,7 +88,37 @@ namespace AdysTech.Influxer
                 }
 
                 List<IInfluxDatapoint> points = null, retryQueue = new List<IInfluxDatapoint> ();
+                
 
+                if (settings.InfluxDB.RetentionDuration != 0 || !String.IsNullOrWhiteSpace (settings.InfluxDB.RetentionPolicy))
+                {
+                    var policies = await client.GetRetentionPoliciesAsync (settings.InfluxDB.DatabaseName);
+                    //if duraiton is specified that takes precidence
+                    if (settings.InfluxDB.RetentionDuration != 0)
+                    {
+                        policy = policies.FirstOrDefault (p => p.Duration.TotalMinutes == settings.InfluxDB.RetentionDuration);
+
+                        if (policy == null)
+                        {
+                            policy = new InfluxRetentionPolicy ()
+                            {
+                                Name = String.IsNullOrWhiteSpace (settings.InfluxDB.RetentionPolicy) ? $"InfluxerRetention_{settings.InfluxDB.RetentionDuration}min" : settings.InfluxDB.RetentionPolicy,
+                                DBName = settings.InfluxDB.DatabaseName,
+                                Duration = TimeSpan.FromMinutes (settings.InfluxDB.RetentionDuration),
+                                IsDefault = false,
+                                ReplicaN = 1
+                            };
+                            if (!await client.CreateRetentionPolicyAsync (policy))
+                                throw new InvalidOperationException ("Unable to create retention policy");
+                        }
+                    }
+                    else if (!String.IsNullOrWhiteSpace (settings.InfluxDB.RetentionPolicy))
+                    {
+                        policy = policies.FirstOrDefault (p => p.Name == settings.InfluxDB.RetentionPolicy);
+                        if (policy == null)
+                            throw new ArgumentException ("No Retention policy with Name {0} was found, and duration is not specified to create a new one!!", settings.InfluxDB.RetentionPolicy);
+                    }
+                }
                 //Parallel.ForEach (File.ReadLines (inputFileName).Skip (1), (string line) =>
                 foreach (var line in File.ReadLines (InputFileName).Skip (1))
                 {
@@ -205,7 +236,10 @@ namespace AdysTech.Influxer
                         result.ExitCode = ExitCode.ProcessedWithErrors;
                 }
                 else
+                {
+                    result.ExitCode = ExitCode.Success;
                     Logger.LogLine (LogLevel.Info, "\n Done!! Processed:- {0} lines, {1} points", linesProcessed, result.PointsFound);
+                }
             }
 
             catch (Exception e)
@@ -214,7 +248,7 @@ namespace AdysTech.Influxer
                 Logger.LogLine (LogLevel.Error, "\r\nError!! {0}:{1} - {2}", e.GetType ().Name, e.Message, e.StackTrace);
                 result.ExitCode = ExitCode.UnknownError;
             }
-            result.ExitCode = ExitCode.Success;
+            
             return result;
         }
 
@@ -263,37 +297,60 @@ namespace AdysTech.Influxer
 
             var points = new List<IInfluxDatapoint> ();
 
-            foreach (var group in perfGroup)
+            foreach (var performanceObject in perfGroup)
             {
-                foreach (var hostGrp in group.GroupBy (p => p.Host))
+                foreach (var hostGrp in performanceObject.GroupBy (p => p.Host))
                 {
-                    var point = new InfluxDatapoint<double> ();
-                    if (defaultTags.Count > 0) point.InitializeTags (defaultTags);
-                    point.Tags.Add ("Host", hostGrp.Key);
-                    point.MeasurementName = group.Key;
-                    point.UtcTimestamp = utcTime;
-
-                    double value = 0.0;
-
-                    foreach (var counter in hostGrp)
+                    if (settings.PerfmonFile.MultiMeasurements)
                     {
-                        if (!String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value))
-                        {
-                            //Perfmon file can have duplicate columns!!
-                            if (point.Fields.ContainsKey (counter.CounterName))
-                                point.Fields[counter.CounterName] = value;
-                            else
-                                point.Fields.Add (counter.CounterName, value);
+                        var point = new InfluxDatapoint<double> ();
+                        if (defaultTags.Count > 0) point.InitializeTags (defaultTags);
+                        point.Tags.Add ("Host", hostGrp.Key);
+                        point.Precision = TimePrecision.Seconds;
+                        point.Retention = policy;
+                        point.MeasurementName = performanceObject.Key;
+                        point.UtcTimestamp = utcTime;
 
+                        double value = 0.0;
+
+                        foreach (var counter in hostGrp)
+                        {
+                            if (!String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value))
+                            {
+                                //Perfmon file can have duplicate columns!!
+                                if (point.Fields.ContainsKey (counter.CounterName))
+                                    point.Fields[counter.CounterName] = value;
+                                else
+                                    point.Fields.Add (counter.CounterName, value);
+                            }
+                        }
+                        if (point.Fields.Count > 0)
+                            points.Add (point);
+                    }
+                    else
+                    {
+                        foreach (var counter in hostGrp)
+                        {
+                            double value = 0.0;
+                            if (!String.IsNullOrWhiteSpace (columns[counter.ColumnIndex]) && Double.TryParse (columns[counter.ColumnIndex], out value))
+                            {
+                                var point = new InfluxDatapoint<double> ();
+                                point.Precision = TimePrecision.Seconds;
+                                point.Retention = policy;
+                                if (defaultTags.Count > 0) point.InitializeTags (defaultTags);
+                                point.Tags.Add ("Host", hostGrp.Key);
+                                point.MeasurementName = settings.InfluxDB.Measurement;
+                                point.UtcTimestamp = utcTime;
+                                point.Tags.Add ("PerformanceObject", counter.PerformanceObject);
+                                point.Tags.Add ("PerformanceCounter", counter.CounterName);
+                                point.Fields.Add ("CounterValue", value);
+                                points.Add (point);
+                            }
                         }
                     }
-                    if (point.Fields.Count > 0)
-                        points.Add (point);
                 }
             }
-
             return points;
-
         }
 
     }
