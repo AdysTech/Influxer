@@ -49,9 +49,9 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
-    <Reference Include="AdysTech.InfluxDB.Client.Net, Version=0.0.0.1, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\InfluxDB.Client.Net\AdysTech.InfluxDB.Client.Net\bin\Debug\AdysTech.InfluxDB.Client.Net.dll</HintPath>
+    <Reference Include="AdysTech.InfluxDB.Client.Net, Version=0.5.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AdysTech.InfluxDB.Client.Net.0.5.3\lib\net451\AdysTech.InfluxDB.Client.Net.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -112,6 +112,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
