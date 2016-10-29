@@ -49,8 +49,12 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
-    <Reference Include="AdysTech.InfluxDB.Client.Net, Version=0.5.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\AdysTech.InfluxDB.Client.Net.0.5.3\lib\net451\AdysTech.InfluxDB.Client.Net.dll</HintPath>
+    <Reference Include="AdysTech.InfluxDB.Client.Net, Version=0.5.9.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AdysTech.InfluxDB.Client.Net.0.5.9.1\lib\net451\AdysTech.InfluxDB.Client.Net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -64,24 +68,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config\CommandLineProcessor.cs" />
     <Compile Include="Config\ConfigurationElementCollection.cs" />
     <Compile Include="Config\ColumnConfig.cs" />
     <Compile Include="Config\ColumnLayoutConfig.cs" />
     <Compile Include="Config\CommandLineArgAttribute.cs" />
-    <Compile Include="Config\FilterTransformation.cs" />
-    <Compile Include="Config\ISplit.cs" />
-    <Compile Include="Config\Splitter.cs" />
-    <Compile Include="Config\ExtractTransformation.cs" />
+    <Compile Include="Transformations\FilterTransformation.cs" />
+    <Compile Include="Interfaces\ISplit.cs" />
+    <Compile Include="Transformations\Splitter.cs" />
+    <Compile Include="Transformations\ExtractTransformation.cs" />
     <Compile Include="Config\GenericFileConfig.cs" />
-    <Compile Include="Config\IConfigurationElementCollectionElement.cs" />
+    <Compile Include="Interfaces\IConfigurationElementCollectionElement.cs" />
     <Compile Include="Config\InfluxDBConfig.cs" />
     <Compile Include="Config\InfluxerConfigSection.cs" />
-    <Compile Include="Config\IOverridableConfig.cs" />
-    <Compile Include="Config\ITransform.cs" />
+    <Compile Include="Interfaces\IOverridableConfig.cs" />
+    <Compile Include="Interfaces\ITransform.cs" />
     <Compile Include="Config\OverridableConfigElement.cs" />
     <Compile Include="Config\PerfmonFileConfig.cs" />
-    <Compile Include="Config\ReplaceTransformation.cs" />
-    <Compile Include="Config\TransformationCollection.cs" />
+    <Compile Include="Transformations\ReplaceTransformation.cs" />
+    <Compile Include="Transformations\TransformationCollection.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="FailureTracker.cs" />
     <Compile Include="GenericColumn.cs" />
@@ -114,6 +119,7 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

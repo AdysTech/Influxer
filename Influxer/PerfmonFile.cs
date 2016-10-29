@@ -19,7 +19,7 @@ namespace AdysTech.Influxer
         private Regex pattern;
         private Dictionary<string, string> defaultTags;
         private int minOffset;
-        InfluxRetentionPolicy policy = null;
+        IInfluxRetentionPolicy policy = null;
 
         public PerfmonFile ()
         {
@@ -74,13 +74,13 @@ namespace AdysTech.Influxer
 
 
 
-                InfluxDatabase dbStructure;
+                IInfluxDatabase dbStructure;
                 IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup;
                 if (settings.PerfmonFile.Filter != Filters.None)
                 {
                     var filterColumns = ParsePerfMonFileHeader (settings.PerfmonFile.ColumnsFilter.Columns.ToString (), false);
                     dbStructure = await client.GetInfluxDBStructureAsync (settings.InfluxDB.DatabaseName);
-                    perfGroup = FilterPerfmonLogColumns (pecrfCounters, filterColumns, dbStructure).GroupBy (p => p.PerformanceObject);
+                    perfGroup = FilterPerfmonLogColumns (pecrfCounters, filterColumns, dbStructure as InfluxDatabase).GroupBy (p => p.PerformanceObject);
                 }
                 else
                 {
