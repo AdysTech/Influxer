@@ -5,6 +5,7 @@ using AdysTech.InfluxDB.Client.Net;
 using System.Threading.Tasks;
 using AdysTech.Influxer;
 using System.IO;
+using System.Diagnostics;
 
 namespace Influxer.Test
 {
@@ -39,14 +40,29 @@ namespace Influxer.Test
 
         }
 
+        private static async Task<InfluxDBClient> GetClientAsync (InfluxerConfigSection settings)
+        {
+            var client = new InfluxDBClient (settings.InfluxDB.InfluxUri, settings.InfluxDB.UserName, settings.InfluxDB.Password);
+            var dbNames = await client.GetInfluxDBNamesAsync ();
+            if (dbNames.Contains (settings.InfluxDB.DatabaseName))
+                return client;
+            else
+            {
+                await client.CreateDatabaseAsync (settings.InfluxDB.DatabaseName);
+                return client;
+            }
+        }
+
         [TestMethod]
         public async Task TestGenericHeaderless ()
         {
             var settings = InfluxerConfigSection.Load (Path.Combine (TestFilesPath, "HeaderlessText.conf"));
             settings.InputFileName = Path.Combine (TestFilesPath, "HeaderlessText.txt");
             var client = await GetClientAsync (settings);
-            var result = await new GenericFile ().ProcessGenericFile (settings.InputFileName, client);
-            Assert.IsTrue (result.ExitCode == ExitCode.Success || result.ExitCode == ExitCode.ProcessedWithErrors, "Processing a generic text file failed");
+            var file = new GenericFile ();
+            var result = await file.ProcessGenericFile (settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue (result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 1001 && result.PointsFailed == 29, "Processing a generic text file failed");
         }
 
         [TestMethod]
@@ -57,7 +73,8 @@ namespace Influxer.Test
             settings.InputFileName = Path.Combine (TestFilesPath, "Perfmon.csv");
             var client = await GetClientAsync (settings);
             var result = await new PerfmonFile ().ProcessPerfMonLog (settings.InputFileName, client);
-            Assert.IsTrue (result.ExitCode == ExitCode.Success || result.ExitCode == ExitCode.ProcessedWithErrors, "Processing Perfmon file failed");
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue (result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 144818 && result.PointsFailed == 0, "Processing Perfmon file failed");
         }
 
         [TestMethod]
@@ -71,7 +88,8 @@ namespace Influxer.Test
             settings.InputFileName = Path.Combine (TestFilesPath, "Perfmon.csv");
             var client = await GetClientAsync (settings);
             var result = await new PerfmonFile ().ProcessPerfMonLog (settings.InputFileName, client);
-            Assert.IsTrue (result.ExitCode == ExitCode.Success || result.ExitCode == ExitCode.ProcessedWithErrors, "Processing Perfmon file failed");
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue (result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 5347 && result.PointsFailed == 0, "Processing Perfmon file failed");
         }
 
         [TestMethod]
@@ -83,8 +101,10 @@ namespace Influxer.Test
             settings.InfluxDB.RetentionPolicy = "autogen";
             settings.GenericFile.TimeFormat = "yyyy-MM-dd m:ss";
             var client = await GetClientAsync (settings);
-            var result = await new GenericFile ().ProcessGenericFile (settings.InputFileName, client);
-            Assert.IsTrue (result.ExitCode == ExitCode.Success || result.ExitCode == ExitCode.ProcessedWithErrors, "Processing a generic CSV file failed");
+            var file = new GenericFile ();
+            var result = await file.ProcessGenericFile (settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue (result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 4897 && result.PointsFailed == 1, "Processing a generic CSV file failed");
         }
 
         [TestMethod]
@@ -97,21 +117,25 @@ namespace Influxer.Test
             settings.InfluxDB.RetentionPolicy = "autogen";
             var client = await GetClientAsync (settings);
             var result = await new GenericFile ().ProcessGenericFile (settings.InputFileName, client);
-            Assert.IsTrue (result.ExitCode == ExitCode.Success || result.ExitCode == ExitCode.ProcessedWithErrors, "Processing a generic CSV file failed");
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue (result.ExitCode == ExitCode.Success && result.PointsFound == 226 && result.PointsFailed == 0, "Processing a generic CSV file failed");
         }
 
-
-        private static async Task<InfluxDBClient> GetClientAsync (InfluxerConfigSection settings)
+        [TestMethod]
+        public async Task TestGenericMicroSecPrecision ()
         {
-            var client = new InfluxDBClient (settings.InfluxDB.InfluxUri, settings.InfluxDB.UserName, settings.InfluxDB.Password);
-            var dbNames = await client.GetInfluxDBNamesAsync ();
-            if (dbNames.Contains (settings.InfluxDB.DatabaseName))
-                return client;
-            else
-            {
-                await client.CreateDatabaseAsync (settings.InfluxDB.DatabaseName);
-                return client;
-            }
+            var args = new string[] { "-input", Path.Combine (TestFilesPath, "MicroSecSemicolonSeperated.txt"),
+                "-format", "Generic",
+                "-TimeFormat", "yyyy-MM-dd-hh.mm.ss.ffffff",
+                "-Precision", "Microseconds",
+                "-splitter", ";" };
+            InfluxerConfigSection settings;
+            CommandLineProcessor.ProcessArguments (args);
+            settings = CommandLineProcessor.Settings;
+            var client = await GetClientAsync (settings);
+            var result = await new GenericFile ().ProcessGenericFile (settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue (result.ExitCode == ExitCode.Success && result.PointsFound == 4 && result.PointsFailed == 0, "Processing a generic MicroSecSemicolonSeperated file failed");
         }
     }
 }

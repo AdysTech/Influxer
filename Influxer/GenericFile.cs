@@ -51,7 +51,7 @@ namespace AdysTech.Influxer
                 if (r.ExitCode != ExitCode.Success)
                     return r;
 
-                InfluxDatabase dbStructure;
+                IInfluxDatabase dbStructure;
                 if (settings.GenericFile.Filter != Filters.None)
                 {
                     var filterColumns = new List<GenericColumn> ();
@@ -64,7 +64,7 @@ namespace AdysTech.Influxer
                     }
 
                     dbStructure = await client.GetInfluxDBStructureAsync (settings.InfluxDB.DatabaseName);
-                    ColumnHeaders = FilterGenericColumns (ColumnHeaders, filterColumns, dbStructure);
+                    ColumnHeaders = FilterGenericColumns (ColumnHeaders, filterColumns, dbStructure as InfluxDatabase);
 
                 }
 
@@ -73,7 +73,7 @@ namespace AdysTech.Influxer
                 var failureReasons = new Dictionary<Type, FailureTracker> ();
 
                 List<IInfluxDatapoint> points = new List<IInfluxDatapoint> (), retryQueue = new List<IInfluxDatapoint> ();
-                InfluxRetentionPolicy policy = null;
+                IInfluxRetentionPolicy policy = null;
 
                 if (settings.InfluxDB.RetentionDuration != 0 || !String.IsNullOrWhiteSpace (settings.InfluxDB.RetentionPolicy))
                 {
