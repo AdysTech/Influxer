@@ -1,16 +1,19 @@
 version: 0.{build}
+image: Visual Studio 2017
 pull_requests:
   do_not_increment_build_number: true
 branches:
   only:
   - master
 before_build:
-- cmd: nuget restore -verbosity detailed
-- set PATH="C:\Program Files (x86)\MSBuild\14.0\Bin";%PATH%
+- nuget restore
+- dotnet restore
+platform: Any CPU
+configuration: Release
 build:
   verbosity: minimal
 artifacts:
-- path: Influxer\bin\debug
-  name: InfluxerDebug
+- path: Influxer\bin\Release
+  name: InfluxerRelease
 before_test:
 - ps: Influxer.Test\TestSetup.ps1
