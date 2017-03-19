@@ -13,7 +13,7 @@ configuration: Release
 build:
   verbosity: minimal
 artifacts:
-- path: Influxer\bin\Release
-  name: InfluxerRelease
+- path: Influxer\bin\$(configuration)
+  name: InfluxerLatest
 before_test:
 - ps: Influxer.Test\TestSetup.ps1
