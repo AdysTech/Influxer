@@ -28,7 +28,7 @@ namespace AdysTech.Influxer.Config
             }
             #region Parse command line arguments
             Dictionary<string, string> cmdArgs = new Dictionary<string, string> ();
-            Regex commandSwitch = new Regex ("^-[a-zA-Z+]|^/[a-zA-Z+]", RegexOptions.Compiled);
+            Regex commandSwitch = new Regex ("^-[-a-zA-Z+]|^/[a-zA-Z+]", RegexOptions.Compiled);
             for (int i = 0; i < args.Length; i++)
             {
                 if (commandSwitch.IsMatch (args[i]))

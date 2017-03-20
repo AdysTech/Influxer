@@ -6,9 +6,10 @@ A C# console application to parse log files (currently only Windows Perfmon form
 Meet Influxer, a small C# console application, which will take any text files with time series and upload it to any Influx instance.
 It has special handling for Microsoft Windows Perfmon file format. It can be configured (via command lines or by configuration files) to handle any type of text files.
      
-####Build Status
+#### Build Status
 [![Build status](https://ci.appveyor.com/api/projects/status/j9c7xfqj6wv9fg76?svg=true)](https://ci.appveyor.com/project/AdysTech/influxer)
-	 
+
+#### [Download Latest](https://ci.appveyor.com/api/projects/AdysTech/Influxer/artifacts/Influxer/bin/InfluxerLatest.zip?branch=master)
 	 Supported command line arguments
      --help /? or /help  shows this help text
      
