@@ -26,9 +26,9 @@ namespace AdysTech.Influxer
             settings = InfluxerConfigSection.GetCurrentOrDefault ();
             pattern = new Regex (settings.PerfmonFile.ColumnSplitter, RegexOptions.Compiled);
             defaultTags = new Dictionary<string, string> ();
-            if (settings.PerfmonFile.DefaultTags.Tags != null && settings.PerfmonFile.DefaultTags.Tags.Count > 0)
+            if (settings.PerfmonFile.DefaultTags!= null && settings.PerfmonFile.DefaultTags.Count > 0)
             {
-                foreach (var tag in settings.PerfmonFile.DefaultTags.Tags)
+                foreach (var tag in settings.PerfmonFile.DefaultTags)
                 {
                     var tags = tag.Split ('=');
                     defaultTags.Add (tags[0], tags[1]);
@@ -78,7 +78,7 @@ namespace AdysTech.Influxer
                 IEnumerable<IGrouping<string, PerfmonCounter>> perfGroup;
                 if (settings.PerfmonFile.Filter != Filters.None)
                 {
-                    var filterColumns = ParsePerfMonFileHeader (settings.PerfmonFile.ColumnsFilter.Columns.ToString (), false);
+                    var filterColumns = ParsePerfMonFileHeader (settings.PerfmonFile.ColumnsFilter.ToString (), false);
                     dbStructure = await client.GetInfluxDBStructureAsync (settings.InfluxDB.DatabaseName);
                     perfGroup = FilterPerfmonLogColumns (pecrfCounters, filterColumns, dbStructure as InfluxDatabase).GroupBy (p => p.PerformanceObject);
                 }

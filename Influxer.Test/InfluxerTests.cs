@@ -142,7 +142,7 @@ namespace Influxer.Test
         [TestMethod]
         public void TestHelpCommand()
         {
-            var args = new string[] { "--help" };            
+            var args = new string[] { "--help" };
             Assert.IsFalse(CommandLineProcessor.ProcessArguments(args), "Processing help command failed");
         }
 
@@ -154,11 +154,11 @@ namespace Influxer.Test
                 "-TimeFormat", "yyyy-MM-dd-hh.mm.ss.ffffff",
                 "-Precision", "Microseconds",
                 "-splitter", ";",
+                "-tags", "Server=abcd",
                 "/export",
                 "/autolayout"
             };
             Assert.IsFalse(CommandLineProcessor.ProcessArguments(args), "Processing AutoLayout Command failed");
         }
-
     }
-    }
+}
