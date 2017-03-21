@@ -26,9 +26,9 @@ namespace AdysTech.Influxer
             settings = InfluxerConfigSection.GetCurrentOrDefault ();
             pattern = new Regex (settings.GenericFile.ColumnSplitter, RegexOptions.Compiled);
             defaultTags = new Dictionary<string, string> ();
-            if (settings.GenericFile.DefaultTags.Tags != null && settings.GenericFile.DefaultTags.Tags.Count > 0)
+            if (settings.GenericFile.DefaultTags != null && settings.GenericFile.DefaultTags.Count > 0)
             {
-                foreach (var tag in settings.GenericFile.DefaultTags.Tags)
+                foreach (var tag in settings.GenericFile.DefaultTags)
                 {
                     var tags = tag.Split ('=');
                     defaultTags.Add (tags[0], tags[1]);
@@ -60,7 +60,7 @@ namespace AdysTech.Influxer
                         if (settings.GenericFile.ColumnLayout != null && settings.GenericFile.ColumnLayout.Count > 0)
                             Logger.LogLine (LogLevel.Info, "Column Filtering is not applicable when columns are defined in Config file. Use the Skip attribute on each column to filter them");
                         else
-                            filterColumns = ParseGenericColumns (settings.GenericFile.ColumnsFilter.Columns.ToString ());
+                            filterColumns = ParseGenericColumns (settings.GenericFile.ColumnsFilter.ToString ());
                     }
 
                     dbStructure = await client.GetInfluxDBStructureAsync (settings.InfluxDB.DatabaseName);
@@ -157,6 +157,15 @@ namespace AdysTech.Influxer
                     {
                         result.PointsFailed++;
                         var type = e.GetType ();
+                        if(e is InfluxDBException)
+                        {
+                            if((e as InfluxDBException).Reason == "Partial Write")
+                            {
+                                retryQueue.AddRange(points.Where(p => p.Saved != true));
+                                result.PointsProcessed += points.Count(p => p.Saved);
+                                points.Clear();
+                            }
+                        }
                         if (!failureReasons.ContainsKey (type))
                             failureReasons.Add (type, new FailureTracker () { ExceptionType = type, Message = e.Message });
                         failureReasons[type].LineNumbers.Add (result.PointsFound + settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows + 1);
@@ -204,16 +213,26 @@ namespace AdysTech.Influxer
                 if (retryQueue.Count > 0)
                 {
                     Logger.LogLine (LogLevel.Verbose, "\n {0} Retrying {1} failed points", stopwatch.Elapsed.ToString (@"hh\:mm\:ss"), retryQueue.Count);
-                    if (await client.PostPointsAsync (settings.InfluxDB.DatabaseName, retryQueue))
+                    try
                     {
-                        result.PointsProcessed += retryQueue.Count;
-                        retryQueue.Clear ();
+                        if (await client.PostPointsAsync(settings.InfluxDB.DatabaseName, retryQueue))
+                        {
+                            result.PointsProcessed += retryQueue.Count;
+                            retryQueue.Clear();
+                        }
+                        else
+                        {
+                            result.PointsFailed += retryQueue.Count;
+                            if (retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || ++failedReqCount > 4)
+                                throw new InvalidOperationException("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+                        }
                     }
-                    else
+                    catch (InfluxDBException e)
                     {
-                        result.PointsFailed += retryQueue.Count;
-                        if (retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || ++failedReqCount > 4)
-                            throw new InvalidOperationException ("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
+                        if (e.Reason == "Partial Write")
+                        {
+
+                        }
                     }
                 }
 

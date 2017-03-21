@@ -22,9 +22,9 @@ namespace AdysTech.Influxer.Logging
         {
             get
             {
-//#if DEBUG
-//                return LogLevel.Info;
-//#endif
+                //#if DEBUG
+                //                return LogLevel.Info;
+                //#endif
                 if (_minLevel == null)
                 {
                     if (Console.IsOutputRedirected)
@@ -56,22 +56,23 @@ namespace AdysTech.Influxer.Logging
             }
         }
 
-        public static void Log (LogLevel level, string format, params object[] arg)
+        public static void Log(LogLevel level, string format, params object[] arg)
         {
             if (level < MinLevel) return;
             if (Debugger.IsAttached)
             {
                 if (level == LogLevel.Error)
-                    Debug.WriteLine (format, arg);
+                    if (arg?.Length > 0) Debug.WriteLine(format, arg); else Debug.WriteLine(format);
                 else
-                    Debug.WriteLine (format, arg);
+                    if (arg?.Length > 0) Debug.WriteLine(format, arg); else Debug.WriteLine(format);
             }
             else
             {
                 if (level == LogLevel.Error)
-                    Console.Error.Write (format, arg);
+                    if (arg?.Length > 0) Console.Error.Write(format, arg); else Console.Error.Write(format);
                 else
-                    Console.Write (format, arg);
+                    if (arg?.Length > 0) Console.Write(format, arg); else Console.Write(format);
+                
             }
         }
     }
