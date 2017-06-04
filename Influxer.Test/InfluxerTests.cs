@@ -83,7 +83,7 @@ namespace Influxer.Test
         {
             var settings = InfluxerConfigSection.LoadDefault();
             settings.FileFormat = FileFormats.Perfmon;
-            settings.InfluxDB.RetentionDuration = 2400;
+            settings.InfluxDB.RetentionDuration = (int)TimeSpan.FromDays(365).TotalMinutes;
             settings.InfluxDB.RetentionPolicy = "autogen1";
             settings.PerfmonFile.MultiMeasurements = true;
             settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
@@ -155,6 +155,7 @@ namespace Influxer.Test
                 "-Precision", "Microseconds",
                 "-splitter", ";",
                 "-tags", "Server=abcd",
+                "-ignoreerrors",
                 "/export",
                 "/autolayout"
             };

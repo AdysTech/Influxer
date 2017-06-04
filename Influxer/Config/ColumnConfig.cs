@@ -1,12 +1,12 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 namespace AdysTech.Influxer.Config
 {
+    
     public enum ColumnDataType : int
     {
         Unknown = 0,
@@ -17,71 +17,54 @@ namespace AdysTech.Influxer.Config
         BooleanField
     }
 
-    public class ColumnConfig : ConfigurationElement, IConfigurationElementCollectionElement
+    public class ColumnConfig 
     {
 
 
-        [ConfigurationProperty("NameInFile")]
         public string NameInFile
         {
-            get { return (string)this["NameInFile"]; }
-            set { this["NameInFile"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("InfluxName", IsRequired = true)]
         public string InfluxName
         {
-            get { return (string)this["InfluxName"]; }
-            set { this["InfluxName"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("Skip", DefaultValue = false)]
         public bool Skip
         {
-            get { return (bool)this["Skip"]; }
-            set { this["Skip"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("DataType")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public ColumnDataType DataType
         {
-            get { return (ColumnDataType)this["DataType"]; }
-            set { this["DataType"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("ReplaceTransformations")]
         public ReplaceTransformationCollection ReplaceTransformations
         {
-            get { return (ReplaceTransformationCollection)this["ReplaceTransformations"]; }
-            set { this["ReplaceTransformations"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("ExtractTransformations")]
         public ExtractTransformationCollection ExtractTransformations
         {
-            get { return (ExtractTransformationCollection)this["ExtractTransformations"]; }
-            set { this["ExtractTransformations"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty ("FilterTransformations")]
         public FilterTransformationCollection FilterTransformations
         {
-            get { return (FilterTransformationCollection) this["FilterTransformations"]; }
-            set { this["FilterTransformations"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("Split")]
         public Splitter SplitConfig
         {
-            get { return (Splitter)this["Split"]; }
-            set { this["Split"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty ("IsDefault")]
         public bool IsDefault
         {
-            get { return (bool) this["IsDefault"]; }
-            set { this["IsDefault"] = value; }
+            get; set;
         }
 
         public string GetKey()
@@ -89,15 +72,19 @@ namespace AdysTech.Influxer.Config
             return InfluxName;
         }
 
-        protected override void PostDeserialize()
+        [OnDeserialized]
+        internal void PostDeserialize(StreamingContext context)
         {
-            base.PostDeserialize();
-            if (SplitConfig.SubColumnsConfig.Count>0 && (ExtractTransformations?.Count > 0 ||
+            if (SplitConfig?.SplitColumns?.Count > 0 && (ExtractTransformations?.Count > 0 ||
                                                 ReplaceTransformations?.Count > 0))
             {
                 throw new ArgumentException("A Column can be split or transformed, but not both!!");
             }
         }
 
+        public ColumnConfig()
+        {
+          
+        }
     }
 }

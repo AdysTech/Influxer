@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -8,42 +10,35 @@ using System.Threading.Tasks;
 
 namespace AdysTech.Influxer.Config
 {
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum SplitType
     {
         Delimited,
         FixedWidth
     }
 
-    public class Splitter : ConfigurationElement, ISplit
+    public class Splitter : ISplit
     {
 
-        [ConfigurationProperty ("Type")]
         public SplitType Type
         {
-            get { return (SplitType) this["Type"]; }
-            set { this["Type"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty ("Width")]
         public int Width
         {
-            get { return (int) this["Width"]; }
-            set { this["Width"] = value; }
+            get; set;
         }
 
 
-        [ConfigurationProperty ("Delimiter")]
         public string Delimiter
         {
-            get { return (string) this["Delimiter"]; }
-            set { this["Delimiter"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty ("SplitColumns")]
-        public ColumnLayoutConfig SubColumnsConfig
+        public List<ColumnConfig> SplitColumns
         {
-            get { return (ColumnLayoutConfig) this["SplitColumns"]; }
-            set { this["SplitColumns"] = value; }
+            get; set;
         }
 
 
@@ -53,52 +48,55 @@ namespace AdysTech.Influxer.Config
         {
             get
             {
-                if (Type == SplitType.Delimited && _splitPattern == null && !String.IsNullOrWhiteSpace (Delimiter))
+                if (Type == SplitType.Delimited && _splitPattern == null && !String.IsNullOrWhiteSpace(Delimiter))
                 {
-                    _splitPattern = new Regex (Delimiter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                    _splitPattern = new Regex(Delimiter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 }
                 return _splitPattern;
             }
         }
 
+        [JsonIgnore]
         public IList<ColumnConfig> SubColumns
         {
             get
             {
-                var ls = new List<ColumnConfig> (SubColumnsConfig.Count + SubColumnsConfig.Select (t => t.SplitConfig?.SubColumnsConfig?.Count).Sum ().Value);
-                ls.AddRange (SubColumnsConfig);
-                ls.AddRange (SubColumnsConfig.SelectMany (t => t.SplitConfig?.SubColumns));
+                var ls = new List<ColumnConfig>();//(SubColumnsConfig.Count + SubColumnsConfig.Sum(t => t.SplitConfig?.SubColumnsConfig?.Count) ?? default(int));
+                if(SplitColumns.Count > 0)
+                    ls.AddRange(SplitColumns);
+                if(SplitColumns.Any(t => t.SplitConfig!=null))
+                    ls.AddRange(SplitColumns.SelectMany(t => t.SplitConfig?.SubColumns));
                 return ls;
             }
         }
 
-        public bool CanSplit (string content)
+        public bool CanSplit(string content)
         {
-            if (String.IsNullOrWhiteSpace (content)) return false;
-            
-            return (Type == SplitType.FixedWidth) ? content.Length > Width : SplitPattern.IsMatch (content);
+            if (String.IsNullOrWhiteSpace(content)) return false;
+
+            return (Type == SplitType.FixedWidth) ? content.Length > Width : SplitPattern.IsMatch(content);
 
         }
 
-        public Dictionary<ColumnConfig, string> Split (string content)
+        public Dictionary<ColumnConfig, string> Split(string content)
         {
             IList<string> values = null;
             if (Type == SplitType.FixedWidth)
-                values = content.SplitFixedWidth (Width).ToList ();
+                values = content.SplitFixedWidth(Width).ToList();
             else
-                values = SplitPattern.Split (content).ToList ();
-            var ret = new Dictionary<ColumnConfig, string> ();
-            for (int i = 0; i < SubColumnsConfig.Count; i++)
+                values = SplitPattern.Split(content).ToList();
+            var ret = new Dictionary<ColumnConfig, string>();
+            for (int i = 0; i < SplitColumns.Count; i++)
             {
-                if (SubColumnsConfig[i].SplitConfig?.SubColumns?.Count > 0)
+                if (SplitColumns[i].SplitConfig?.SubColumns?.Count > 0)
                 {
-                    var subColumns = SubColumnsConfig[i].SplitConfig.Split (values[i]);
+                    var subColumns = SplitColumns[i].SplitConfig.Split(values[i]);
                     foreach (var c in subColumns)
-                        ret.Add (c.Key, c.Value);
+                        ret.Add(c.Key, c.Value);
                 }
                 else
                 {
-                    ret.Add (SubColumnsConfig[i], values[i]);
+                    ret.Add(SplitColumns[i], values[i]);
                 }
             }
             return ret;

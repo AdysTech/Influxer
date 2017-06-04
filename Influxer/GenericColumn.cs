@@ -143,7 +143,7 @@ namespace AdysTech.Influxer
                     result.Add (_generatedColumns.FirstOrDefault (t => t.Config == split.Key), split.Value);
                 }
             }
-            else if (Config.SplitConfig.SubColumnsConfig.Any (t => t.IsDefault))
+            else if (Config.SplitConfig.SplitColumns.Any (t => t.IsDefault))
             {
                 result.Add (_generatedColumns.FirstOrDefault (t => t.Config.IsDefault), content);
             }

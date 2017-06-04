@@ -1,84 +1,72 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace AdysTech.Influxer.Config
 {
     public class GenericFileConfig : PerfmonFileConfig
     {
-       
-        [CommandLineArgAttribute ("-utcoffset", Usage = "-utcoffset <No of Minutes>", Description = "Offset in minutes to UTC, each line in input will be adjusted to arrive time in UTC")]
-        [ConfigurationProperty ("UtcOffset", DefaultValue = 0)]
+
+        [CommandLineArgAttribute("-utcoffset", Usage = "-utcoffset <No of Minutes>", Description = "Offset in minutes to UTC, each line in input will be adjusted to arrive time in UTC")]
+        [DefaultValue(Converter = Converters.IntParser)]
         public int UtcOffset
         {
-            get { return (int) this["UtcOffset"]; }
-            set { this["UtcOffset"] = value; }
+            get; set;
         }
 
 
-        [CommandLineArgAttribute ("-validate", Usage = "-validate <No of Rows>", Description = "Validates n rows for consistent column data types")]
-        [ConfigurationProperty ("ValidateRows", DefaultValue = 10)]
+        [CommandLineArgAttribute("-validate", Usage = "-validate <No of Rows>", Description = "Validates n rows for consistent column data types")]
+        [DefaultValue(Value = "10", Converter = Converters.IntParser)]
         public int ValidateRows
         {
-            get { return (int) this["ValidateRows"]; }
-            set { this["ValidateRows"] = value; }
+            get; set;
         }
 
-        [CommandLineArgAttribute ("-header", Usage = "-header <Row No>", Description = "Indicates which row to use to get column headers")]
-        [ConfigurationProperty ("HeaderRow", DefaultValue = 1)]
+        [CommandLineArgAttribute("-header", Usage = "-header <Row No>", Description = "Indicates which row to use to get column headers")]
+        [DefaultValue(Value = "1", Converter = Converters.IntParser)]
         public int HeaderRow
         {
-            get { return (int) this["HeaderRow"]; }
-            set { this["HeaderRow"] = value; }
+            get; set;
         }
 
-        [CommandLineArgAttribute ("-skip", Usage = "-skip <Row No>", Description = "Indicates how may roaws should be skipped after header row to get data rows")]
-        [ConfigurationProperty ("SkipRows", DefaultValue = 0)]
+        [CommandLineArgAttribute("-skip", Usage = "-skip <Row No>", Description = "Indicates how may roaws should be skipped after header row to get data rows")]
+        [DefaultValue(Converter = Converters.IntParser)]
         public int SkipRows
         {
-            get { return (int) this["SkipRows"]; }
-            set { this["SkipRows"] = value; }
+            get; set;
         }
 
-        [CommandLineArgAttribute("-ignore", Usage = "-ignore <char>", Description = "Lines starting with <char> are considered as comments, and ignored")]
-        [ConfigurationProperty("CommentMarker")]
+        [CommandLineArg("-ignore", Usage = "-ignore <char>", Description = "Lines starting with <char> are considered as comments, and ignored")]
         public string CommentMarker
         {
-            get { return (string)this["CommentMarker"]; }
-            set { this["CommentMarker"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("TimeColumn", DefaultValue = 1)]
+        [DefaultValue(Value = "1", Converter = Converters.IntParser)]
         public int TimeColumn
         {
-            get { return (int)this["TimeColumn"]; }
-            set { this["TimeColumn"] = value; }
+            get; set;
         }
 
-        [CommandLineArgAttribute("-noheader", Usage = "-noheader", Description = "Input file does not have column headers, configuration file should provide a column header mapping")]
-        [ConfigurationProperty("HeaderMissing")]
+        [CommandLineArg("-noheader", Usage = "-noheader", Description = "Input file does not have column headers, configuration file should provide a column header mapping")]
+        [DefaultValue(Converter = Converters.BooleanParser)]
         public bool HeaderMissing
         {
-            get { return (bool)this["HeaderMissing"]; }
-            set { this["HeaderMissing"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("ColumnLayout")]
-        public ColumnLayoutConfig ColumnLayout
+        public List<ColumnConfig> ColumnLayout
         {
-            get { return (ColumnLayoutConfig)this["ColumnLayout"]; }
-            set { this["ColumnLayout"] = value; }
+            get; set;
         }
 
-        [CommandLineArgAttribute ("-ignoreerrors", Usage = "-ignoreerrors true", Description = "Ignore too many errors due to invalid data or config file")]
-        [ConfigurationProperty ("IgnoreErrors")]
+        [CommandLineArgAttribute("-ignoreerrors", Usage = "-ignoreerrors", Description = "Ignore too many errors due to invalid data or config file")]
+        [DefaultValue(Converter = Converters.BooleanParser)]
         public bool IgnoreErrors
         {
-            get { return (bool) this["IgnoreErrors"]; }
-            set { this["IgnoreErrors"] = value; }
+            get; set;
+        }
+        public GenericFileConfig() : base()
+        {
+            ColumnLayout = new List<ColumnConfig>();
         }
     }
 }

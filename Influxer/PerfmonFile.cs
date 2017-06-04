@@ -152,7 +152,7 @@ namespace AdysTech.Influxer
                                 if (postresult)
                                 {
                                     failedReqCount = 0;
-                                    result.PointsProcessed += points.Count;
+                                    result.PointsProcessed += points.Count(p=>p.Saved);
                                 }
                                 else
                                 {

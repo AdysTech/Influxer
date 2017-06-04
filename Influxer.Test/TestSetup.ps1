@@ -14,7 +14,7 @@
 	{	Invoke-WebRequest $source -OutFile $destination }
 	
 	if(test-path $influx)
-	{	rmdir -recurse $influx}
+	{	rmdir -recurse $influx -force}
 
 	Add-Type -As System.IO.Compression.FileSystem
 	[System.IO.Compression.ZipFile]::ExtractToDirectory($destination,$influx)

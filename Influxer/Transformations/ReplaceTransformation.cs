@@ -1,45 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AdysTech.Influxer.Config
 {
-    public class ReplaceTransformation : ConfigurationElement, ITransform, IConfigurationElementCollectionElement
+    public class ReplaceTransformation : ITransform
     {
         
-        [ConfigurationProperty("FindText")]
         public string FindText
         {
-            get { return (string)this["FindText"]; }
-            set { this["FindText"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("ReplaceWith")]
         public string ReplaceWith
         {
-            get { return (string)this["ReplaceWith"]; }
-            set { this["ReplaceWith"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("IsDefault")]
         public bool IsDefault
         {
-            get { return (bool)this["IsDefault"]; }
-            set { this["IsDefault"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty("DefaultValue")]
         public string DefaultValue
         {
-            get { return (string)this["DefaultValue"]; }
-            set { this["DefaultValue"] = value; }
+            get; set;
         }
 
-
-
+        
         public bool CanTransform(string content)
         {
             if (IsDefault) return true;

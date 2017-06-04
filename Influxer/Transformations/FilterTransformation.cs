@@ -1,36 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace AdysTech.Influxer.Config
 {
-    public class FilterTransformation : ConfigurationElement, ITransform, IConfigurationElementCollectionElement
+    public class FilterTransformation :  ITransform
     {
 
-        [ConfigurationProperty ("RegEx")]
         public string RegEx
         {
-            get { return (string) this["RegEx"]; }
-            set { this["RegEx"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty ("IsDefault")]
         public bool IsDefault
         {
-            get { return (bool) this["IsDefault"]; }
-            set { this["IsDefault"] = value; }
+            get; set;
         }
 
-        [ConfigurationProperty ("DefaultValue")]
-        public string DefaultValue
+       public string DefaultValue
         {
-            get { return (string) this["DefaultValue"]; }
-            set { this["DefaultValue"] = value; }
+            get; set;
         }
 
         Regex _extractPattern;
