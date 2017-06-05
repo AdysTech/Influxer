@@ -1,39 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 namespace AdysTech.Influxer.Config
 {
-
-    [ConfigurationCollection(typeof(ReplaceTransformation),AddItemName ="Replace", CollectionType = ConfigurationElementCollectionType.BasicMap)]
-    public class ReplaceTransformationCollection : ConfigurationElementCollection<ReplaceTransformation>
+    public class ExtractTransformationCollection : List<ExtractTransformation>
     {
-        protected override void PostDeserialize()
+        [OnDeserialized]
+        internal void PostDeserialize(StreamingContext context)
         {
-            base.PostDeserialize();
             if (this.Count(t => t.IsDefault) > 1)
                 throw new ArgumentException("Only one instance can be marked as Default");
         }
     }
 
-    [ConfigurationCollection(typeof(ExtractTransformation),AddItemName ="Extract", CollectionType = ConfigurationElementCollectionType.BasicMap)]
-    public class ExtractTransformationCollection : ConfigurationElementCollection<ExtractTransformation>
+    public class FilterTransformationCollection : List<FilterTransformation>
     {
-        protected override void PostDeserialize()
+    }
+
+    public class ReplaceTransformationCollection : List<ReplaceTransformation>
+    {
+        [OnDeserialized]
+        internal void PostDeserialize(StreamingContext context)
         {
-            base.PostDeserialize();
             if (this.Count(t => t.IsDefault) > 1)
                 throw new ArgumentException("Only one instance can be marked as Default");
         }
-    }
-
-    [ConfigurationCollection (typeof (FilterTransformation), AddItemName = "Filter", CollectionType = ConfigurationElementCollectionType.BasicMap)]
-    public class FilterTransformationCollection : ConfigurationElementCollection<FilterTransformation>
-    {
-        
     }
 }
-

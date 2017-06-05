@@ -1,6 +1,6 @@
 ##################################################################################################
 #This script downloads the latest nightly InfluxDB build, starts the db engine, and creates basic
-#data structures so that 'show databases' query will not fail during tests if the query gets 
+#data structures so that 'show databases' query will not fail during tests if the query gets
 #executed before CreateDatabase test
 #
 ##################################################################################################
@@ -9,26 +9,26 @@
 	$destination = "$env:Temp\influxdb-nightly_windows_amd64.zip"
 	$influx = "$env:Temp\influxdb"
 	$influxdata = "$env:UserProfile\.influxdb"
-	
+
 	if(!(test-path $destination) -or ((Get-ItemProperty -Path $destination -Name LastWriteTime).lastwritetime -lt $(get-date).AddDays(-1)))
 	{	Invoke-WebRequest $source -OutFile $destination }
-	
+
 	if(test-path $influx)
-	{	rmdir -recurse $influx}
+	{	rmdir -recurse $influx -force}
 
 	Add-Type -As System.IO.Compression.FileSystem
 	[System.IO.Compression.ZipFile]::ExtractToDirectory($destination,$influx)
 	$influxd = Get-ChildItem $influx -File -filter "influxd.exe" -Recurse | % { $_.FullName }
-	
+
     #$x = 7z e $destination -o"$env:Temp\influxdb" -y
 	if(test-path $influxdata)
 	{ rmdir -recurse "$env:UserProfile\.influxdb" }
-	
+
     Start-Process -FilePath $influxd
 	#let the engine start
 	Start-Sleep -s 10
-	
-	$r = Invoke-WebRequest -Method Post -Uri http://localhost:8086/query -Body "q=CREATE DATABASE prereq" 
+
+	$r = Invoke-WebRequest -Method Post -Uri http://localhost:8086/query -Body "q=CREATE DATABASE prereq"
 	if($r.StatusCode -ne 200)
 	{
 		throw "Unable to create DB"

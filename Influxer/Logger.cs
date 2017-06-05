@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AdysTech.Influxer.Logging
 {
@@ -16,7 +12,7 @@ namespace AdysTech.Influxer.Logging
 
     public static class Logger
     {
-        static LogLevel? _minLevel;
+        private static LogLevel? _minLevel;
 
         public static LogLevel MinLevel
         {
@@ -33,26 +29,6 @@ namespace AdysTech.Influxer.Logging
                         _minLevel = LogLevel.Verbose;
                 }
                 return _minLevel.Value;
-            }
-
-        }
-
-        public static void LogLine(LogLevel level, string format, params object[] arg)
-        {
-            if (level < MinLevel) return;
-            if (Debugger.IsAttached)
-            {
-                if (level == LogLevel.Error)
-                    Debug.WriteLine(format, arg);
-                else
-                    Debug.WriteLine(format, arg);
-            }
-            else
-            {
-                if (level == LogLevel.Error)
-                    Console.Error.WriteLine(format, arg);
-                else
-                    Console.WriteLine(format, arg);
             }
         }
 
@@ -72,7 +48,25 @@ namespace AdysTech.Influxer.Logging
                     if (arg?.Length > 0) Console.Error.Write(format, arg); else Console.Error.Write(format);
                 else
                     if (arg?.Length > 0) Console.Write(format, arg); else Console.Write(format);
-                
+            }
+        }
+
+        public static void LogLine(LogLevel level, string format, params object[] arg)
+        {
+            if (level < MinLevel) return;
+            if (Debugger.IsAttached)
+            {
+                if (level == LogLevel.Error)
+                    Debug.WriteLine(format, arg);
+                else
+                    Debug.WriteLine(format, arg);
+            }
+            else
+            {
+                if (level == LogLevel.Error)
+                    Console.Error.WriteLine(format, arg);
+                else
+                    Console.WriteLine(format, arg);
             }
         }
     }

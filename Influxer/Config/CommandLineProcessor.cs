@@ -5,13 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace AdysTech.Influxer.Config
 {
     public static class CommandLineProcessor
     {
         private static InfluxerConfigSection _settings;
+
         public static InfluxerConfigSection Settings
         {
             get
@@ -26,7 +26,9 @@ namespace AdysTech.Influxer.Config
             {
                 throw new ArgumentException("Command line arguments not valid, try --help to see valid ones!");
             }
+
             #region Parse command line arguments
+
             Dictionary<string, string> cmdArgs = new Dictionary<string, string>();
             Regex commandSwitch = new Regex("^-[-a-zA-Z+]|^/[a-zA-Z+]", RegexOptions.Compiled);
             for (int i = 0; i < args.Length; i++)
@@ -85,7 +87,8 @@ namespace AdysTech.Influxer.Config
             {
                 _settings = InfluxerConfigSection.LoadDefault();
             }
-            #endregion
+
+            #endregion Parse command line arguments
 
             if (totalArguments >= 1)
             {
@@ -126,7 +129,6 @@ namespace AdysTech.Influxer.Config
                 }
                 return false;
             }
-
 
             if (cmdArgs.Count > 0)
             {

@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
+using System.Runtime.Serialization;
 
 namespace AdysTech.Influxer.Config
 {
@@ -17,87 +15,62 @@ namespace AdysTech.Influxer.Config
         BooleanField
     }
 
-    public class ColumnConfig : ConfigurationElement, IConfigurationElementCollectionElement
+    public class ColumnConfig
     {
-
-
-        [ConfigurationProperty("NameInFile")]
-        public string NameInFile
+        [OnDeserialized]
+        internal void PostDeserialize(StreamingContext context)
         {
-            get { return (string)this["NameInFile"]; }
-            set { this["NameInFile"] = value; }
-        }
-
-        [ConfigurationProperty("InfluxName", IsRequired = true)]
-        public string InfluxName
-        {
-            get { return (string)this["InfluxName"]; }
-            set { this["InfluxName"] = value; }
-        }
-
-        [ConfigurationProperty("Skip", DefaultValue = false)]
-        public bool Skip
-        {
-            get { return (bool)this["Skip"]; }
-            set { this["Skip"] = value; }
-        }
-
-        [ConfigurationProperty("DataType")]
-        public ColumnDataType DataType
-        {
-            get { return (ColumnDataType)this["DataType"]; }
-            set { this["DataType"] = value; }
-        }
-
-        [ConfigurationProperty("ReplaceTransformations")]
-        public ReplaceTransformationCollection ReplaceTransformations
-        {
-            get { return (ReplaceTransformationCollection)this["ReplaceTransformations"]; }
-            set { this["ReplaceTransformations"] = value; }
-        }
-
-        [ConfigurationProperty("ExtractTransformations")]
-        public ExtractTransformationCollection ExtractTransformations
-        {
-            get { return (ExtractTransformationCollection)this["ExtractTransformations"]; }
-            set { this["ExtractTransformations"] = value; }
-        }
-
-        [ConfigurationProperty ("FilterTransformations")]
-        public FilterTransformationCollection FilterTransformations
-        {
-            get { return (FilterTransformationCollection) this["FilterTransformations"]; }
-            set { this["FilterTransformations"] = value; }
-        }
-
-        [ConfigurationProperty("Split")]
-        public Splitter SplitConfig
-        {
-            get { return (Splitter)this["Split"]; }
-            set { this["Split"] = value; }
-        }
-
-        [ConfigurationProperty ("IsDefault")]
-        public bool IsDefault
-        {
-            get { return (bool) this["IsDefault"]; }
-            set { this["IsDefault"] = value; }
-        }
-
-        public string GetKey()
-        {
-            return InfluxName;
-        }
-
-        protected override void PostDeserialize()
-        {
-            base.PostDeserialize();
-            if (SplitConfig.SubColumnsConfig.Count>0 && (ExtractTransformations?.Count > 0 ||
+            if (SplitConfig?.SplitColumns?.Count > 0 && (ExtractTransformations?.Count > 0 ||
                                                 ReplaceTransformations?.Count > 0))
             {
                 throw new ArgumentException("A Column can be split or transformed, but not both!!");
             }
         }
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        public ColumnDataType DataType
+        {
+            get; set;
+        }
+
+        public ExtractTransformationCollection ExtractTransformations
+        {
+            get; set;
+        }
+
+        public FilterTransformationCollection FilterTransformations
+        {
+            get; set;
+        }
+
+        public string InfluxName
+        {
+            get; set;
+        }
+
+        public bool IsDefault
+        {
+            get; set;
+        }
+
+        public string NameInFile
+        {
+            get; set;
+        }
+
+        public ReplaceTransformationCollection ReplaceTransformations
+        {
+            get; set;
+        }
+
+        public bool Skip
+        {
+            get; set;
+        }
+
+        public Splitter SplitConfig
+        {
+            get; set;
+        }
     }
 }

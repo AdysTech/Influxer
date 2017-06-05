@@ -1,45 +1,17 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using AdysTech.Influxer.Config;
-using AdysTech.InfluxDB.Client.Net;
-using System.Threading.Tasks;
+﻿using AdysTech.InfluxDB.Client.Net;
 using AdysTech.Influxer;
+using AdysTech.Influxer.Config;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
-using System.Diagnostics;
-using AdysTech.Influxer.Logging;
+using System.Threading.Tasks;
 
 namespace Influxer.Test
 {
     [TestClass]
     public class InfluxerTests
     {
-        string _testFilesPath;
-
-        public string TestFilesPath
-        {
-            get
-            {
-                if (_testFilesPath != null)
-                    return _testFilesPath;
-                var pwd = Directory.GetCurrentDirectory();
-                //ordered tests use a different folder structure
-                if (pwd.EndsWith("Out"))
-                {
-                    var proj = Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                    _testFilesPath = Path.Combine(Directory.GetParent(pwd).Parent.Parent.FullName, proj, "TestFiles");
-
-                }
-                else
-                {
-                    _testFilesPath = Directory.GetParent(pwd).Parent.FullName;
-                    _testFilesPath = Path.Combine(_testFilesPath, "TestFiles");
-                }
-                return _testFilesPath;
-
-            }
-
-
-        }
+        private string _testFilesPath;
 
         private static async Task<InfluxDBClient> GetClientAsync(InfluxerConfigSection settings)
         {
@@ -54,10 +26,48 @@ namespace Influxer.Test
             }
         }
 
+        public string TestFilesPath
+        {
+            get
+            {
+                if (_testFilesPath != null)
+                    return _testFilesPath;
+                var pwd = Directory.GetCurrentDirectory();
+                //ordered tests use a different folder structure
+                if (pwd.EndsWith("Out"))
+                {
+                    var proj = Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                    _testFilesPath = Path.Combine(Directory.GetParent(pwd).Parent.Parent.FullName, proj, "TestFiles");
+                }
+                else
+                {
+                    _testFilesPath = Directory.GetParent(pwd).Parent.FullName;
+                    _testFilesPath = Path.Combine(_testFilesPath, "TestFiles");
+                }
+                return _testFilesPath;
+            }
+        }
+
+        [TestMethod]
+        public void TestAutoLayoutCommand()
+        {
+            var args = new string[] { "-input", Path.Combine (TestFilesPath, "MicroSecSemicolonSeperated.txt"),
+                "-format", "Generic",
+                "-TimeFormat", "yyyy-MM-dd-hh.mm.ss.ffffff",
+                "-Precision", "Microseconds",
+                "-splitter", ";",
+                "-tags", "Server=abcd",
+                "-ignoreerrors",
+                "/export",
+                "/autolayout"
+            };
+            Assert.IsFalse(CommandLineProcessor.ProcessArguments(args), "Processing AutoLayout Command failed");
+        }
+
         [TestMethod]
         public async Task TestGenericHeaderless()
         {
-            var settings = InfluxerConfigSection.Load(Path.Combine(TestFilesPath, "HeaderlessText.conf"));
+            var settings = InfluxerConfigSection.Load(Path.Combine(TestFilesPath, "HeaderlessText.conf"),true);
             settings.InputFileName = Path.Combine(TestFilesPath, "HeaderlessText.txt");
             var client = await GetClientAsync(settings);
             var file = new GenericFile();
@@ -67,30 +77,20 @@ namespace Influxer.Test
         }
 
         [TestMethod]
-        public async Task TestPerfmonFile()
+        public async Task TestGenericMicroSecPrecision()
         {
-            var settings = InfluxerConfigSection.LoadDefault();
-            settings.FileFormat = FileFormats.Perfmon;
-            settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
+            var args = new string[] { "-input", Path.Combine (TestFilesPath, "MicroSecSemicolonSeperated.txt"),
+                "-format", "Generic",
+                "-TimeFormat", "yyyy-MM-dd-hh.mm.ss.ffffff",
+                "-Precision", "Microseconds",
+                "-splitter", ";" };
+            InfluxerConfigSection settings;
+            CommandLineProcessor.ProcessArguments(args);
+            settings = CommandLineProcessor.Settings;
             var client = await GetClientAsync(settings);
-            var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
+            var result = await new GenericFile().ProcessGenericFile(settings.InputFileName, client);
             //Debug.WriteLine (result.ToString ());
-            Assert.IsTrue(result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 144818 && result.PointsFailed == 0, "Processing Perfmon file failed");
-        }
-
-        [TestMethod]
-        public async Task TestPerfmonFileMultiMeasurement()
-        {
-            var settings = InfluxerConfigSection.LoadDefault();
-            settings.FileFormat = FileFormats.Perfmon;
-            settings.InfluxDB.RetentionDuration = 2400;
-            settings.InfluxDB.RetentionPolicy = "autogen1";
-            settings.PerfmonFile.MultiMeasurements = true;
-            settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
-            var client = await GetClientAsync(settings);
-            var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
-            //Debug.WriteLine (result.ToString ());
-            Assert.IsTrue(result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 5347 && result.PointsFailed == 0, "Processing Perfmon file failed");
+            Assert.IsTrue(result.ExitCode == ExitCode.Success && result.PointsFound == 4 && result.PointsFailed == 0, "Processing a generic MicroSecSemicolonSeperated file failed");
         }
 
         [TestMethod]
@@ -123,23 +123,6 @@ namespace Influxer.Test
         }
 
         [TestMethod]
-        public async Task TestGenericMicroSecPrecision()
-        {
-            var args = new string[] { "-input", Path.Combine (TestFilesPath, "MicroSecSemicolonSeperated.txt"),
-                "-format", "Generic",
-                "-TimeFormat", "yyyy-MM-dd-hh.mm.ss.ffffff",
-                "-Precision", "Microseconds",
-                "-splitter", ";" };
-            InfluxerConfigSection settings;
-            CommandLineProcessor.ProcessArguments(args);
-            settings = CommandLineProcessor.Settings;
-            var client = await GetClientAsync(settings);
-            var result = await new GenericFile().ProcessGenericFile(settings.InputFileName, client);
-            //Debug.WriteLine (result.ToString ());
-            Assert.IsTrue(result.ExitCode == ExitCode.Success && result.PointsFound == 4 && result.PointsFailed == 0, "Processing a generic MicroSecSemicolonSeperated file failed");
-        }
-
-        [TestMethod]
         public void TestHelpCommand()
         {
             var args = new string[] { "--help" };
@@ -147,18 +130,30 @@ namespace Influxer.Test
         }
 
         [TestMethod]
-        public void TestAutoLayoutCommand()
+        public async Task TestPerfmonFile()
         {
-            var args = new string[] { "-input", Path.Combine (TestFilesPath, "MicroSecSemicolonSeperated.txt"),
-                "-format", "Generic",
-                "-TimeFormat", "yyyy-MM-dd-hh.mm.ss.ffffff",
-                "-Precision", "Microseconds",
-                "-splitter", ";",
-                "-tags", "Server=abcd",
-                "/export",
-                "/autolayout"
-            };
-            Assert.IsFalse(CommandLineProcessor.ProcessArguments(args), "Processing AutoLayout Command failed");
+            var settings = InfluxerConfigSection.LoadDefault();
+            settings.FileFormat = FileFormats.Perfmon;
+            settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
+            var client = await GetClientAsync(settings);
+            var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue(result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 144818 && result.PointsFailed == 0, "Processing Perfmon file failed");
+        }
+
+        [TestMethod]
+        public async Task TestPerfmonFileMultiMeasurement()
+        {
+            var settings = InfluxerConfigSection.LoadDefault();
+            settings.FileFormat = FileFormats.Perfmon;
+            settings.InfluxDB.RetentionDuration = (int)TimeSpan.FromDays(365).TotalMinutes;
+            settings.InfluxDB.RetentionPolicy = "autogen1";
+            settings.PerfmonFile.MultiMeasurements = true;
+            settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
+            var client = await GetClientAsync(settings);
+            var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue(result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 5347 && result.PointsFailed == 0, "Processing Perfmon file failed");
         }
     }
 }
