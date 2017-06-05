@@ -15,44 +15,13 @@ namespace AdysTech.Influxer.Config
 
     public class ExtractTransformation : ITransform
     {
-
-        public ExtractType Type
-        {
-            get; set;
-        }
-
-        public int StartIndex
-        {
-            get; set;
-        }
-
-        public int Length
-        {
-            get; set;
-        }
-
-
-        public string RegEx
-        {
-            get; set;
-        }
-
-        public string ResultPattern
-        {
-            get; set;
-        }
-
-        public bool IsDefault
-        {
-            get; set;
-        }
+        private Regex _extractPattern;
 
         public string DefaultValue
         {
             get; set;
         }
 
-        Regex _extractPattern;
         public Regex ExtractPattern
         {
             get
@@ -65,7 +34,35 @@ namespace AdysTech.Influxer.Config
             }
         }
 
+        public bool IsDefault
+        {
+            get; set;
+        }
 
+        public int Length
+        {
+            get; set;
+        }
+
+        public string RegEx
+        {
+            get; set;
+        }
+
+        public string ResultPattern
+        {
+            get; set;
+        }
+
+        public int StartIndex
+        {
+            get; set;
+        }
+
+        public ExtractType Type
+        {
+            get; set;
+        }
 
         public bool CanTransform(string content)
         {
@@ -74,7 +71,6 @@ namespace AdysTech.Influxer.Config
                 return !String.IsNullOrWhiteSpace(content) ? content.Length > StartIndex && content.Length > (StartIndex + Length) : false;
             else
                 return !String.IsNullOrWhiteSpace(content) ? ExtractPattern.IsMatch(content) : false;
-
         }
 
         public string Transform(string content)
@@ -84,7 +80,6 @@ namespace AdysTech.Influxer.Config
                 return content.Substring(StartIndex, Length);
             else
             {
-
                 var m = ExtractPattern.Match(content);
                 if (m.Success)
                 {
@@ -94,7 +89,6 @@ namespace AdysTech.Influxer.Config
                             return m.Groups[0].Value;
                         else
                             return string.Format(ResultPattern, m.Groups.Cast<Group>().Skip(1).Select(g => g.Value as object).ToArray());
-
                     }
                     catch (Exception e)
                     {
@@ -103,11 +97,6 @@ namespace AdysTech.Influxer.Config
                 }
             }
             return null;
-        }
-
-        public string GetKey()
-        {
-            return this.GetHashCode().ToString();
         }
     }
 }

@@ -6,14 +6,12 @@ namespace AdysTech.Influxer.Config
     public class CommandLineArgAttribute : Attribute
     {
         public string Argument { get; set; }
-        public string Usage { get; set; }
         public string Description { get; set; }
+        public string Usage { get; set; }
 
         public CommandLineArgAttribute(string argument)
         {
             Argument = argument;
         }
     }
-
-
 }

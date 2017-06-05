@@ -7,6 +7,21 @@ namespace AdysTech.Influxer.Config
 {
     public class OverridableConfigElement : IOverridableConfig
     {
+        private object Converter(string value, Type propertyType, Converters? converter)
+        {
+            switch (converter)
+            {
+                case Converters.None: return value;
+                case Converters.BooleanParser: return bool.Parse(value);
+                case Converters.DoubleParser: return double.Parse(value);
+                case Converters.IntParser: return int.Parse(value);
+                case Converters.CommaSeperatedListParser: return new List<string>(value.Split(','));
+                case Converters.EnumParser: return Enum.Parse(propertyType, value, true);
+                case Converters.CharParser: return value.First();
+                default: return value;
+            }
+        }
+
         public OverridableConfigElement()
         {
             foreach (var prop in this.GetType().GetProperties())
@@ -27,8 +42,30 @@ namespace AdysTech.Influxer.Config
             }
         }
 
-
         #region IOverridableConfig Members
+
+        public string PrintHelpText()
+        {
+            StringBuilder help = new StringBuilder();
+            foreach (var prop in this.GetType().GetProperties())
+            {
+                var cmdAttribute = prop.GetCustomAttributes(typeof(CommandLineArgAttribute), true).FirstOrDefault() as CommandLineArgAttribute;
+                var valAttribute = prop.GetCustomAttributes(typeof(DefaultValueAttribute), true).FirstOrDefault() as DefaultValueAttribute;
+                if (cmdAttribute != null)
+                {
+                    help.AppendFormat("{0,-40}\t\t{1,-100}", cmdAttribute.Usage, cmdAttribute.Description);
+                    if (valAttribute != null)
+                        help.AppendFormat("\t Default:{0,-40}\n", valAttribute.Value);
+                    else
+                        help.Append("\n");
+                }
+                if (prop.GetType().GetInterfaces().Contains(typeof(IOverridableConfig)))
+                {
+                    help.Append((prop as IOverridableConfig).PrintHelpText());
+                }
+            }
+            return help.ToString();
+        }
 
         public bool ProcessCommandLineArguments(Dictionary<string, string> CommandLine)
         {
@@ -66,51 +103,10 @@ namespace AdysTech.Influxer.Config
                     ret = (prop as IOverridableConfig).ProcessCommandLineArguments(CommandLine);
                     found = !found ? ret : found;
                 }
-
             }
             return found;
         }
 
-
-
-        public string PrintHelpText()
-        {
-            StringBuilder help = new StringBuilder();
-            foreach (var prop in this.GetType().GetProperties())
-            {
-                var cmdAttribute = prop.GetCustomAttributes(typeof(CommandLineArgAttribute), true).FirstOrDefault() as CommandLineArgAttribute;
-                var valAttribute = prop.GetCustomAttributes(typeof(DefaultValueAttribute), true).FirstOrDefault() as DefaultValueAttribute;
-                if (cmdAttribute != null)
-                {
-                    help.AppendFormat("{0,-40}\t\t{1,-100}", cmdAttribute.Usage, cmdAttribute.Description);
-                    if (valAttribute != null)
-                        help.AppendFormat("\t Default:{0,-40}\n", valAttribute.Value);
-                    else
-                        help.Append("\n");
-                }
-                if (prop.GetType().GetInterfaces().Contains(typeof(IOverridableConfig)))
-                {
-                    help.Append((prop as IOverridableConfig).PrintHelpText());
-                }
-            }
-            return help.ToString();
-        }
-
-        #endregion
-        private object Converter(string value, Type propertyType, Converters? converter)
-        {
-
-            switch (converter)
-            {
-                case Converters.None: return value;
-                case Converters.BooleanParser: return bool.Parse(value);
-                case Converters.DoubleParser: return double.Parse(value);
-                case Converters.IntParser: return int.Parse(value);
-                case Converters.CommaSeperatedListParser: return new List<string>(value.Split(','));
-                case Converters.EnumParser: return Enum.Parse(propertyType, value, true);
-                case Converters.CharParser: return value.First();
-                default: return value;
-            }
-        }
+        #endregion IOverridableConfig Members
     }
 }

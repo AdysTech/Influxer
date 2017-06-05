@@ -1,12 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace AdysTech.Influxer.Config
 {
-    
     public enum ColumnDataType : int
     {
         Unknown = 0,
@@ -17,32 +15,20 @@ namespace AdysTech.Influxer.Config
         BooleanField
     }
 
-    public class ColumnConfig 
+    public class ColumnConfig
     {
-
-
-        public string NameInFile
+        [OnDeserialized]
+        internal void PostDeserialize(StreamingContext context)
         {
-            get; set;
-        }
-
-        public string InfluxName
-        {
-            get; set;
-        }
-
-        public bool Skip
-        {
-            get; set;
+            if (SplitConfig?.SplitColumns?.Count > 0 && (ExtractTransformations?.Count > 0 ||
+                                                ReplaceTransformations?.Count > 0))
+            {
+                throw new ArgumentException("A Column can be split or transformed, but not both!!");
+            }
         }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public ColumnDataType DataType
-        {
-            get; set;
-        }
-
-        public ReplaceTransformationCollection ReplaceTransformations
         {
             get; set;
         }
@@ -57,7 +43,7 @@ namespace AdysTech.Influxer.Config
             get; set;
         }
 
-        public Splitter SplitConfig
+        public string InfluxName
         {
             get; set;
         }
@@ -67,24 +53,24 @@ namespace AdysTech.Influxer.Config
             get; set;
         }
 
-        public string GetKey()
+        public string NameInFile
         {
-            return InfluxName;
+            get; set;
         }
 
-        [OnDeserialized]
-        internal void PostDeserialize(StreamingContext context)
+        public ReplaceTransformationCollection ReplaceTransformations
         {
-            if (SplitConfig?.SplitColumns?.Count > 0 && (ExtractTransformations?.Count > 0 ||
-                                                ReplaceTransformations?.Count > 0))
-            {
-                throw new ArgumentException("A Column can be split or transformed, but not both!!");
-            }
+            get; set;
         }
 
-        public ColumnConfig()
+        public bool Skip
         {
-          
+            get; set;
+        }
+
+        public Splitter SplitConfig
+        {
+            get; set;
         }
     }
 }

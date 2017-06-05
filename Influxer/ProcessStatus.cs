@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AdysTech.Influxer
+﻿namespace AdysTech.Influxer
 {
     public class ProcessStatus
     {
+        public ExitCode ExitCode { get; set; }
+        public int PointsFailed { get; set; }
         public int PointsFound { get; set; }
         public int PointsProcessed { get; set; }
-        public int PointsFailed { get; set; }
-        public ExitCode ExitCode { get; set; }
     }
 }

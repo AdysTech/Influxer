@@ -4,13 +4,12 @@ namespace AdysTech.Influxer.Config
 {
     public class ReplaceTransformation : ITransform
     {
-        
-        public string FindText
+        public string DefaultValue
         {
             get; set;
         }
 
-        public string ReplaceWith
+        public string FindText
         {
             get; set;
         }
@@ -20,24 +19,18 @@ namespace AdysTech.Influxer.Config
             get; set;
         }
 
-        public string DefaultValue
+        public string ReplaceWith
         {
             get; set;
         }
 
-        
         public bool CanTransform(string content)
         {
             if (IsDefault) return true;
             return !String.IsNullOrWhiteSpace(content) ? content.Contains(FindText) : false;
         }
 
-        public string GetKey()
-        {
-            return this.GetHashCode().ToString();
-        }
-
-        public  string Transform(string content)
+        public string Transform(string content)
         {
             if (IsDefault) return DefaultValue;
             return content.Replace(FindText, ReplaceWith);

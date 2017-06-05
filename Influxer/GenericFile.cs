@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -15,9 +14,107 @@ namespace AdysTech.Influxer
 {
     public class GenericFile
     {
-        private InfluxerConfigSection settings;
-        private Regex pattern;
         private Dictionary<string, string> defaultTags;
+        private Regex pattern;
+        private InfluxerConfigSection settings;
+
+        private List<GenericColumn> FilterGenericColumns(List<GenericColumn> columns, List<GenericColumn> filterColumns, InfluxDatabase dbStructure)
+        {
+            switch (settings.GenericFile.Filter)
+            {
+                case Filters.Measurement:
+                    return columns.Where(p => dbStructure.Measurements.Any(m => m.Name == settings.InfluxDB.Measurement)).ToList();
+
+                case Filters.Field:
+                    return columns.Where(p => dbStructure.Measurements.Any(m => m.Name == settings.InfluxDB.Measurement) &&
+                    (dbStructure.Measurements.FirstOrDefault(m => m.Name == settings.InfluxDB.Measurement).Tags.Contains(p.ColumnHeader)
+                    || dbStructure.Measurements.FirstOrDefault(m => m.Name == settings.InfluxDB.Measurement).Fields.Contains(p.ColumnHeader))).ToList();
+
+                case Filters.Columns:
+                    return columns.Where(p => filterColumns.Any(f => f.ColumnHeader == p.ColumnHeader)).ToList();
+            }
+            return columns;
+        }
+
+        private List<GenericColumn> ParseGenericColumns(string headerLine)
+        {
+            var columns = new List<GenericColumn>();
+            columns.AddRange(pattern.Split(headerLine).Select((s, i) => new GenericColumn() { ColumnIndex = i, ColumnHeader = s.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith) }));
+            return columns;
+        }
+
+        private InfluxDatapoint<InfluxValueField> ProcessGenericLine(string line, List<GenericColumn> columnHeaders)
+        {
+            var columns = pattern.Split(line);
+            var columnCount = columns.Count();
+            var content = columns[settings.GenericFile.TimeColumn - 1].Replace("\"", "");
+
+            InfluxDatapoint<InfluxValueField> point = new InfluxDatapoint<InfluxValueField>();
+            point.Precision = settings.GenericFile.Precision;
+            point.MeasurementName = settings.InfluxDB.Measurement;
+
+            point.InitializeTags(defaultTags);
+
+            var pointData = new Dictionary<GenericColumn, string>();
+
+            foreach (var c in columnHeaders)
+            {
+                content = columns[c.ColumnIndex].Replace("\"", "");
+
+                if (c.HasAutoGenColumns)
+                {
+                    pointData.AddRange(c.SplitData(content));
+                }
+                else
+                {
+                    pointData.Add(c, content);
+                }
+            }
+
+            foreach (var d in pointData)
+            {
+                content = d.Value;
+                if (d.Key.HasTransformations && d.Key.CanTransform(content))
+                    content = d.Key.Transform(d.Value);
+
+                if (String.IsNullOrWhiteSpace(content)) continue;
+
+                if (d.Key.ColumnIndex == settings.GenericFile.TimeColumn - 1)
+                {
+                    DateTime timeStamp;
+                    if (!DateTime.TryParseExact(content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
+                        throw new FormatException("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
+                    point.UtcTimestamp = timeStamp.AddMinutes(settings.GenericFile.UtcOffset);
+                }
+                else
+                {
+                    double value = double.NaN; bool boolVal = false;
+                    if (d.Key.Type == ColumnDataType.NumericalField)
+                    {
+                        if (!Double.TryParse(content, out value) || double.IsNaN(value))
+                            throw new InvalidDataException(d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as number");
+                        point.Fields.Add(d.Key.ColumnHeader, new InfluxValueField(Math.Round(value, 2)));
+                    }
+                    else if (d.Key.Type == ColumnDataType.StringField)
+                    {
+                        point.Fields.Add(d.Key.ColumnHeader, new InfluxValueField(content));
+                    }
+                    else if (d.Key.Type == ColumnDataType.BooleanField)
+                    {
+                        if (!Boolean.TryParse(content, out boolVal))
+                            throw new InvalidDataException(d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as Boolean");
+                        point.Fields.Add(d.Key.ColumnHeader, new InfluxValueField(boolVal));
+                    }
+                    else if (d.Key.Type == ColumnDataType.Tag)
+                        point.Tags.Add(d.Key.ColumnHeader, content.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
+                }
+            }
+
+            if (point.Fields.Count == 0)
+                throw new InvalidDataException("No values found on the row to post to Influx");
+
+            return point;
+        }
 
         public List<GenericColumn> ColumnHeaders { get; private set; }
 
@@ -34,6 +131,63 @@ namespace AdysTech.Influxer
                     defaultTags.Add(tags[0], tags[1]);
                 }
             }
+        }
+
+        public ProcessStatus GetFileLayout(string InputFileName)
+        {
+            ColumnHeaders = new List<GenericColumn>();
+            if (settings.GenericFile.HeaderMissing && settings.GenericFile.ColumnLayout.Count == 0)
+            {
+                Logger.LogLine(LogLevel.Info, "Header missing, but no columns defined in configuration. Cannot proceed!!");
+                Logger.LogLine(LogLevel.Error, "Header missing, but no columns defined in configuration. Cannot proceed!!");
+                return new ProcessStatus() { ExitCode = ExitCode.InvalidArgument };
+            }
+            else if (!settings.GenericFile.HeaderMissing)
+            {
+                var firstLine = File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow - 1).FirstOrDefault();
+                var columns = ParseGenericColumns(firstLine);
+                if (settings.GenericFile.ColumnLayout.Count > 0)
+                {
+                    foreach (var c in columns)
+                    {
+                        if (!String.IsNullOrWhiteSpace(settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile) && settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile != c.ColumnHeader)
+                        {
+                            Logger.LogLine(LogLevel.Info, $"Column Mismatch: Column[{c.ColumnIndex}] defined in configuration {settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile}, found {c.ColumnHeader}, Cannot proceed!!");
+                            Logger.LogLine(LogLevel.Info, $"Column Mismatch: Column[{c.ColumnIndex}] defined in configuration {settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile}, found {c.ColumnHeader}, Cannot proceed!!");
+
+                            return new ProcessStatus() { ExitCode = ExitCode.InvalidArgument };
+                        }
+
+                        if (!settings.GenericFile.ColumnLayout[c.ColumnIndex].Skip)
+                        {
+                            c.ColumnHeader = settings.GenericFile.ColumnLayout[c.ColumnIndex].InfluxName;
+                            c.Type = settings.GenericFile.ColumnLayout[c.ColumnIndex].DataType;
+                            c.Config = settings.GenericFile.ColumnLayout[c.ColumnIndex];
+                            ColumnHeaders.Add(c);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var c in columns)
+                    {
+                        c.Config = new ColumnConfig() { NameInFile = c.ColumnHeader, InfluxName = c.ColumnHeader, DataType = c.Type };
+                        settings.GenericFile.ColumnLayout.Add(c.Config);
+                        ColumnHeaders.Add(c);
+                    }
+                }
+            }
+            else
+            {
+                var index = 0;
+                foreach (ColumnConfig c in settings.GenericFile.ColumnLayout)
+                {
+                    if (!c.Skip)
+                        ColumnHeaders.Add(new GenericColumn() { ColumnHeader = c.InfluxName, ColumnIndex = index, Type = c.DataType, Config = c });
+                    index++;
+                }
+            }
+            return new ProcessStatus() { ExitCode = ExitCode.Success };
         }
 
         public async Task<ProcessStatus> ProcessGenericFile(string InputFileName, InfluxDBClient client)
@@ -65,7 +219,6 @@ namespace AdysTech.Influxer
 
                     dbStructure = await client.GetInfluxDBStructureAsync(settings.InfluxDB.DatabaseName);
                     ColumnHeaders = FilterGenericColumns(ColumnHeaders, filterColumns, dbStructure as InfluxDatabase);
-
                 }
 
                 var validity = ValidateData(InputFileName);
@@ -104,7 +257,6 @@ namespace AdysTech.Influxer
                             throw new ArgumentException("No Retention policy with Name {0} was found, and duration is not specified to create a new one!!", settings.InfluxDB.RetentionPolicy);
                     }
                 }
-
 
                 foreach (var line in File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow + settings.GenericFile.SkipRows))
                 {
@@ -182,18 +334,15 @@ namespace AdysTech.Influxer
                         Logger.Log(LogLevel.Verbose, "\r{0} Processed {1}, Failed {2}, Queued {3}                        ", stopwatch.Elapsed.ToString(@"hh\:mm\:ss"), result.PointsFound, result.PointsFailed, retryQueue.Count);
                     else
                         Logger.Log(LogLevel.Verbose, "\r{0} Processed {1}                          ", stopwatch.Elapsed.ToString(@"hh\:mm\:ss"), result.PointsFound);
-
                 }
 
                 //if we reached here due to repeated failures
                 if (retryQueue.Count >= settings.InfluxDB.PointsInSingleBatch * 3 || failedReqCount > 3)
                     throw new InvalidOperationException("InfluxDB is not able to accept points!! Please check InfluxDB logs for error details!");
 
-
                 //finally few points may be left out which were not processed (say 10 points left, but we check for 100 points in a batch)
                 if (points != null && points.Count > 0)
                 {
-
                     if (await client.PostPointsAsync(settings.InfluxDB.DatabaseName, points))
                     {
                         result.PointsProcessed += points.Count;
@@ -230,7 +379,6 @@ namespace AdysTech.Influxer
                     {
                         if (e.Reason == "Partial Write")
                         {
-
                         }
                     }
                 }
@@ -251,7 +399,6 @@ namespace AdysTech.Influxer
                     result.ExitCode = ExitCode.Success;
                     Logger.LogLine(LogLevel.Info, "\n Done!! Processed:- {0} points", result.PointsFound);
                 }
-
             }
             catch (Exception e)
             {
@@ -260,64 +407,6 @@ namespace AdysTech.Influxer
                 result.ExitCode = ExitCode.UnableToProcess;
             }
             return result;
-        }
-
-        public ProcessStatus GetFileLayout(string InputFileName)
-        {
-            ColumnHeaders = new List<GenericColumn>();
-            if (settings.GenericFile.HeaderMissing && settings.GenericFile.ColumnLayout.Count == 0)
-            {
-                Logger.LogLine(LogLevel.Info, "Header missing, but no columns defined in configuration. Cannot proceed!!");
-                Logger.LogLine(LogLevel.Error, "Header missing, but no columns defined in configuration. Cannot proceed!!");
-                return new ProcessStatus() { ExitCode = ExitCode.InvalidArgument };
-            }
-
-            else if (!settings.GenericFile.HeaderMissing)
-            {
-                var firstLine = File.ReadLines(InputFileName).Skip(settings.GenericFile.HeaderRow - 1).FirstOrDefault();
-                var columns = ParseGenericColumns(firstLine);
-                if (settings.GenericFile.ColumnLayout.Count > 0)
-                {
-                    foreach (var c in columns)
-                    {
-                        if (!String.IsNullOrWhiteSpace(settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile) && settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile != c.ColumnHeader)
-                        {
-                            Logger.LogLine(LogLevel.Info, $"Column Mismatch: Column[{c.ColumnIndex}] defined in configuration {settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile}, found {c.ColumnHeader}, Cannot proceed!!");
-                            Logger.LogLine(LogLevel.Info, $"Column Mismatch: Column[{c.ColumnIndex}] defined in configuration {settings.GenericFile.ColumnLayout[c.ColumnIndex].NameInFile}, found {c.ColumnHeader}, Cannot proceed!!");
-
-                            return new ProcessStatus() { ExitCode = ExitCode.InvalidArgument };
-                        }
-
-                        if (!settings.GenericFile.ColumnLayout[c.ColumnIndex].Skip)
-                        {
-                            c.ColumnHeader = settings.GenericFile.ColumnLayout[c.ColumnIndex].InfluxName;
-                            c.Type = settings.GenericFile.ColumnLayout[c.ColumnIndex].DataType;
-                            c.Config = settings.GenericFile.ColumnLayout[c.ColumnIndex];
-                            ColumnHeaders.Add(c);
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var c in columns)
-                    {
-                        c.Config = new ColumnConfig() { NameInFile = c.ColumnHeader, InfluxName = c.ColumnHeader, DataType = c.Type };
-                        settings.GenericFile.ColumnLayout.Add(c.Config);
-                        ColumnHeaders.Add(c);
-                    }
-                }
-            }
-            else
-            {
-                var index = 0;
-                foreach (ColumnConfig c in settings.GenericFile.ColumnLayout)
-                {
-                    if (!c.Skip)
-                        ColumnHeaders.Add(new GenericColumn() { ColumnHeader = c.InfluxName, ColumnIndex = index, Type = c.DataType, Config = c });
-                    index++;
-                }
-            }
-            return new ProcessStatus() { ExitCode = ExitCode.Success };
         }
 
         public bool ValidateData(string InputFileName)
@@ -334,12 +423,10 @@ namespace AdysTech.Influxer
                 var columns = pattern.Split(line);
                 double value = 0.0; bool boolVal = false;
 
-
                 var pointData = new Dictionary<GenericColumn, string>();
 
                 foreach (var c in ColumnHeaders)
                 {
-
                     var content = columns[c.ColumnIndex].Replace("\"", "");
                     if (c.HasAutoGenColumns)
                     {
@@ -397,108 +484,6 @@ namespace AdysTech.Influxer
                     break;
             }
             return !ColumnHeaders.Any(t => t.Type == ColumnDataType.Unknown);
-        }
-
-
-
-        private List<GenericColumn> ParseGenericColumns(string headerLine)
-        {
-            var columns = new List<GenericColumn>();
-            columns.AddRange(pattern.Split(headerLine).Select((s, i) => new GenericColumn() { ColumnIndex = i, ColumnHeader = s.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith) }));
-            return columns;
-        }
-
-        private List<GenericColumn> FilterGenericColumns(List<GenericColumn> columns, List<GenericColumn> filterColumns, InfluxDatabase dbStructure)
-        {
-            switch (settings.GenericFile.Filter)
-            {
-                case Filters.Measurement:
-                    return columns.Where(p => dbStructure.Measurements.Any(m => m.Name == settings.InfluxDB.Measurement)).ToList();
-                case Filters.Field:
-                    return columns.Where(p => dbStructure.Measurements.Any(m => m.Name == settings.InfluxDB.Measurement) &&
-                    (dbStructure.Measurements.FirstOrDefault(m => m.Name == settings.InfluxDB.Measurement).Tags.Contains(p.ColumnHeader)
-                    || dbStructure.Measurements.FirstOrDefault(m => m.Name == settings.InfluxDB.Measurement).Fields.Contains(p.ColumnHeader))).ToList();
-                case Filters.Columns:
-                    return columns.Where(p => filterColumns.Any(f => f.ColumnHeader == p.ColumnHeader)).ToList();
-            }
-            return columns;
-        }
-
-        private InfluxDatapoint<InfluxValueField> ProcessGenericLine(string line, List<GenericColumn> columnHeaders)
-        {
-
-            var columns = pattern.Split(line);
-            var columnCount = columns.Count();
-            var content = columns[settings.GenericFile.TimeColumn - 1].Replace("\"", "");
-
-            InfluxDatapoint<InfluxValueField> point = new InfluxDatapoint<InfluxValueField>();
-            point.Precision = settings.GenericFile.Precision;
-            point.MeasurementName = settings.InfluxDB.Measurement;
-
-
-            point.InitializeTags(defaultTags);
-
-            var pointData = new Dictionary<GenericColumn, string>();
-
-            foreach (var c in columnHeaders)
-            {
-
-                content = columns[c.ColumnIndex].Replace("\"", "");
-
-                if (c.HasAutoGenColumns)
-                {
-                    pointData.AddRange(c.SplitData(content));
-                }
-                else
-                {
-                    pointData.Add(c, content);
-                }
-            }
-
-            foreach (var d in pointData)
-            {
-                content = d.Value;
-                if (d.Key.HasTransformations && d.Key.CanTransform(content))
-                    content = d.Key.Transform(d.Value);
-
-                if (String.IsNullOrWhiteSpace(content)) continue;
-
-                if (d.Key.ColumnIndex == settings.GenericFile.TimeColumn - 1)
-                {
-                    DateTime timeStamp;
-                    if (!DateTime.TryParseExact(content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
-                        throw new FormatException("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
-                    point.UtcTimestamp = timeStamp.AddMinutes(settings.GenericFile.UtcOffset);
-                }
-                else
-                {
-                    double value = double.NaN; bool boolVal = false;
-                    if (d.Key.Type == ColumnDataType.NumericalField)
-                    {
-                        if (!Double.TryParse(content, out value) || double.IsNaN(value))
-                            throw new InvalidDataException(d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as number");
-                        point.Fields.Add(d.Key.ColumnHeader, new InfluxValueField(Math.Round(value, 2)));
-                    }
-                    else if (d.Key.Type == ColumnDataType.StringField)
-                    {
-                        point.Fields.Add(d.Key.ColumnHeader, new InfluxValueField(content));
-                    }
-                    else if (d.Key.Type == ColumnDataType.BooleanField)
-                    {
-                        if (!Boolean.TryParse(content, out boolVal))
-                            throw new InvalidDataException(d.Key.ColumnHeader + " has inconsistent data, Unable to parse \"" + content + "\" as Boolean");
-                        point.Fields.Add(d.Key.ColumnHeader, new InfluxValueField(boolVal));
-                    }
-                    else if (d.Key.Type == ColumnDataType.Tag)
-                        point.Tags.Add(d.Key.ColumnHeader, content.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith));
-                }
-            }
-
-
-            if (point.Fields.Count == 0)
-                throw new InvalidDataException("No values found on the row to post to Influx");
-
-            return point;
         }
     }
 }

@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AdysTech.Influxer.Config
+﻿namespace AdysTech.Influxer.Config
 {
     public interface ITransform
     {
-        bool CanTransform(string content);
-        string Transform(string content);
-        bool IsDefault { get; set; }
         string DefaultValue { get; set; }
+
+        bool IsDefault { get; set; }
+
+        bool CanTransform(string content);
+
+        string Transform(string content);
     }
-
-
 }

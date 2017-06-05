@@ -2,13 +2,6 @@
 {
     public class InfluxDBConfig : OverridableConfigElement
     {
-        [CommandLineArg("-influx", Usage = "-influx <Url>", Description = "Influx DB Url including port")]
-        [DefaultValue(Value = "http://localhost:8086")]
-        public string InfluxUri
-        {
-            get; set;
-        }
-
         [CommandLineArg("-dbname", Usage = "-dbName <name>", Description = "Influx database Name, will be created if not present")]
         [DefaultValue(Value = "InfluxerDB")]
         public string DatabaseName
@@ -16,8 +9,21 @@
             get; set;
         }
 
-        [CommandLineArg("-uname", Usage = "-uname <username>", Description = "User name for InfluxDB")]
-        public string UserName
+        public InfluxIdentifiers InfluxReserved
+        {
+            get; set;
+        }
+
+        [CommandLineArg("-influx", Usage = "-influx <Url>", Description = "Influx DB Url including port")]
+        [DefaultValue(Value = "http://localhost:8086")]
+        public string InfluxUri
+        {
+            get; set;
+        }
+
+        [CommandLineArgAttribute("-table", Usage = "-table <table name>", Description = "Measurement name in InfluxDB")]
+        [DefaultValue(Value = "InfluxerData")]
+        public string Measurement
         {
             get; set;
         }
@@ -35,11 +41,6 @@
             get; set;
         }
 
-        public InfluxIdentifiers InfluxReserved
-        {
-            get; set;
-        }
-
         [CommandLineArg("-retentionminutes", Usage = "-retentionDuration <number of minutes>", Description = "No of minutes that the data will be retained by InfluxDB, if noneof the plcies match, a new one will be created")]
         public int RetentionDuration
         {
@@ -52,9 +53,8 @@
             get; set;
         }
 
-        [CommandLineArgAttribute("-table", Usage = "-table <table name>", Description = "Measurement name in InfluxDB")]
-        [DefaultValue(Value = "InfluxerData")]
-        public string Measurement
+        [CommandLineArg("-uname", Usage = "-uname <username>", Description = "User name for InfluxDB")]
+        public string UserName
         {
             get; set;
         }

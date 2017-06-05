@@ -4,44 +4,13 @@ namespace AdysTech.Influxer.Config
 {
     public class GenericFileConfig : PerfmonFileConfig
     {
-
-        [CommandLineArgAttribute("-utcoffset", Usage = "-utcoffset <No of Minutes>", Description = "Offset in minutes to UTC, each line in input will be adjusted to arrive time in UTC")]
-        [DefaultValue(Converter = Converters.IntParser)]
-        public int UtcOffset
-        {
-            get; set;
-        }
-
-
-        [CommandLineArgAttribute("-validate", Usage = "-validate <No of Rows>", Description = "Validates n rows for consistent column data types")]
-        [DefaultValue(Value = "10", Converter = Converters.IntParser)]
-        public int ValidateRows
-        {
-            get; set;
-        }
-
-        [CommandLineArgAttribute("-header", Usage = "-header <Row No>", Description = "Indicates which row to use to get column headers")]
-        [DefaultValue(Value = "1", Converter = Converters.IntParser)]
-        public int HeaderRow
-        {
-            get; set;
-        }
-
-        [CommandLineArgAttribute("-skip", Usage = "-skip <Row No>", Description = "Indicates how may roaws should be skipped after header row to get data rows")]
-        [DefaultValue(Converter = Converters.IntParser)]
-        public int SkipRows
+        public List<ColumnConfig> ColumnLayout
         {
             get; set;
         }
 
         [CommandLineArg("-ignore", Usage = "-ignore <char>", Description = "Lines starting with <char> are considered as comments, and ignored")]
         public string CommentMarker
-        {
-            get; set;
-        }
-
-        [DefaultValue(Value = "1", Converter = Converters.IntParser)]
-        public int TimeColumn
         {
             get; set;
         }
@@ -53,7 +22,9 @@ namespace AdysTech.Influxer.Config
             get; set;
         }
 
-        public List<ColumnConfig> ColumnLayout
+        [CommandLineArgAttribute("-header", Usage = "-header <Row No>", Description = "Indicates which row to use to get column headers")]
+        [DefaultValue(Value = "1", Converter = Converters.IntParser)]
+        public int HeaderRow
         {
             get; set;
         }
@@ -64,6 +35,34 @@ namespace AdysTech.Influxer.Config
         {
             get; set;
         }
+
+        [CommandLineArgAttribute("-skip", Usage = "-skip <Row No>", Description = "Indicates how may roaws should be skipped after header row to get data rows")]
+        [DefaultValue(Converter = Converters.IntParser)]
+        public int SkipRows
+        {
+            get; set;
+        }
+
+        [DefaultValue(Value = "1", Converter = Converters.IntParser)]
+        public int TimeColumn
+        {
+            get; set;
+        }
+
+        [CommandLineArgAttribute("-utcoffset", Usage = "-utcoffset <No of Minutes>", Description = "Offset in minutes to UTC, each line in input will be adjusted to arrive time in UTC")]
+        [DefaultValue(Converter = Converters.IntParser)]
+        public int UtcOffset
+        {
+            get; set;
+        }
+
+        [CommandLineArgAttribute("-validate", Usage = "-validate <No of Rows>", Description = "Validates n rows for consistent column data types")]
+        [DefaultValue(Value = "10", Converter = Converters.IntParser)]
+        public int ValidateRows
+        {
+            get; set;
+        }
+
         public GenericFileConfig() : base()
         {
             ColumnLayout = new List<ColumnConfig>();

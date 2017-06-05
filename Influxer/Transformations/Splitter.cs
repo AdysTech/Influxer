@@ -2,11 +2,8 @@
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace AdysTech.Influxer.Config
 {
@@ -19,17 +16,7 @@ namespace AdysTech.Influxer.Config
 
     public class Splitter : ISplit
     {
-
-        public SplitType Type
-        {
-            get; set;
-        }
-
-        public int Width
-        {
-            get; set;
-        }
-
+        private Regex _splitPattern;
 
         public string Delimiter
         {
@@ -41,9 +28,6 @@ namespace AdysTech.Influxer.Config
             get; set;
         }
 
-
-
-        Regex _splitPattern;
         public Regex SplitPattern
         {
             get
@@ -62,12 +46,22 @@ namespace AdysTech.Influxer.Config
             get
             {
                 var ls = new List<ColumnConfig>();//(SubColumnsConfig.Count + SubColumnsConfig.Sum(t => t.SplitConfig?.SubColumnsConfig?.Count) ?? default(int));
-                if(SplitColumns.Count > 0)
+                if (SplitColumns.Count > 0)
                     ls.AddRange(SplitColumns);
-                if(SplitColumns.Any(t => t.SplitConfig!=null))
+                if (SplitColumns.Any(t => t.SplitConfig != null))
                     ls.AddRange(SplitColumns.SelectMany(t => t.SplitConfig?.SubColumns));
                 return ls;
             }
+        }
+
+        public SplitType Type
+        {
+            get; set;
+        }
+
+        public int Width
+        {
+            get; set;
         }
 
         public bool CanSplit(string content)
@@ -75,7 +69,6 @@ namespace AdysTech.Influxer.Config
             if (String.IsNullOrWhiteSpace(content)) return false;
 
             return (Type == SplitType.FixedWidth) ? content.Length > Width : SplitPattern.IsMatch(content);
-
         }
 
         public Dictionary<ColumnConfig, string> Split(string content)
