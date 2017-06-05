@@ -121,9 +121,9 @@ namespace AdysTech.Influxer.Config
         /// </summary>
         /// <param name="path">Path to the file which contains valid configuration entries. Without InfluxerConfiguration section will raise an exception</param>
         /// <returns>InfluxerConfigSection created based on entries in config file</returns>
-        public static InfluxerConfigSection Load(string path)
+        public static InfluxerConfigSection Load(string path, bool force=false)
         {
-            if (_instance == null)
+            if (force || _instance == null)
             {
                 if (!File.Exists(path))
                     throw new InvalidOperationException("Configuration file was not found!!, Please check the path and retry.");

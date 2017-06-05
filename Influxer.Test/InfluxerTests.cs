@@ -67,7 +67,7 @@ namespace Influxer.Test
         [TestMethod]
         public async Task TestGenericHeaderless()
         {
-            var settings = InfluxerConfigSection.Load(Path.Combine(TestFilesPath, "HeaderlessText.conf"));
+            var settings = InfluxerConfigSection.Load(Path.Combine(TestFilesPath, "HeaderlessText.conf"),true);
             settings.InputFileName = Path.Combine(TestFilesPath, "HeaderlessText.txt");
             var client = await GetClientAsync(settings);
             var file = new GenericFile();
