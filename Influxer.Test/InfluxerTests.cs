@@ -65,6 +65,15 @@ namespace Influxer.Test
         }
 
         [TestMethod]
+        public void TestExportCommand()
+        {
+            var args = new string[] {
+                "/export"
+            };
+            Assert.IsFalse(CommandLineProcessor.ProcessArguments(args), "Processing Export Command failed");
+        }
+
+        [TestMethod]
         public async Task TestGenericHeaderless()
         {
             var settings = InfluxerConfigSection.Load(Path.Combine(TestFilesPath, "HeaderlessText.conf"),true);
@@ -83,7 +92,8 @@ namespace Influxer.Test
                 "-format", "Generic",
                 "-TimeFormat", "yyyy-MM-dd-hh.mm.ss.ffffff",
                 "-Precision", "Microseconds",
-                "-splitter", ";" };
+                "-splitter", ";",
+                "-table" ,"MicroSecPrecision"};
             InfluxerConfigSection settings;
             CommandLineProcessor.ProcessArguments(args);
             settings = CommandLineProcessor.Settings;
@@ -101,6 +111,7 @@ namespace Influxer.Test
             settings.InputFileName = Path.Combine(TestFilesPath, "Simple.csv");
             settings.InfluxDB.RetentionPolicy = "autogen";
             settings.GenericFile.TimeFormat = "yyyy-MM-dd m:ss";
+            settings.InfluxDB.Measurement = "simple";
             var client = await GetClientAsync(settings);
             var file = new GenericFile();
             var result = await file.ProcessGenericFile(settings.InputFileName, client);
@@ -125,7 +136,7 @@ namespace Influxer.Test
         [TestMethod]
         public void TestHelpCommand()
         {
-            var args = new string[] { "--help" };
+            var args = new string[] { "/?" };
             Assert.IsFalse(CommandLineProcessor.ProcessArguments(args), "Processing help command failed");
         }
 
@@ -135,6 +146,7 @@ namespace Influxer.Test
             var settings = InfluxerConfigSection.LoadDefault();
             settings.FileFormat = FileFormats.Perfmon;
             settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
+            settings.InfluxDB.PointsInSingleBatch = 2000;
             var client = await GetClientAsync(settings);
             var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
             //Debug.WriteLine (result.ToString ());
@@ -146,14 +158,66 @@ namespace Influxer.Test
         {
             var settings = InfluxerConfigSection.LoadDefault();
             settings.FileFormat = FileFormats.Perfmon;
-            settings.InfluxDB.RetentionDuration = (int)TimeSpan.FromDays(365).TotalMinutes;
+            settings.InfluxDB.RetentionDuration = (int)TimeSpan.FromDays(365*2).TotalMinutes;
             settings.InfluxDB.RetentionPolicy = "autogen1";
             settings.PerfmonFile.MultiMeasurements = true;
+            
             settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
             var client = await GetClientAsync(settings);
             var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
             //Debug.WriteLine (result.ToString ());
             Assert.IsTrue(result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 5347 && result.PointsFailed == 0, "Processing Perfmon file failed");
+        }
+
+        [TestMethod]
+        public async Task TestBinary()
+        {
+            var args = new string[] { "-input", Path.Combine (TestFilesPath, "binary.csv"),
+                "-format", "Generic",
+                "-timetype", "binary",
+                "-Precision", "Microseconds",
+                "-table" ,"binary"};
+            InfluxerConfigSection settings;
+            CommandLineProcessor.ProcessArguments(args);
+            settings = CommandLineProcessor.Settings;
+            var client = await GetClientAsync(settings);
+            var result = await new GenericFile().ProcessGenericFile(settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue(result.ExitCode == ExitCode.Success && result.PointsFound == 4 && result.PointsFailed == 0, "Processing a generic binary file failed");
+        }
+
+        [TestMethod]
+        public async Task TestEpoch()
+        {
+            var args = new string[] { "-input", Path.Combine (TestFilesPath, "epoch_u.csv"),
+                "-format", "Generic",
+                "-timetype", "epoch",
+                "-Precision", "Microseconds",
+                "-table" ,"epoch"};
+            InfluxerConfigSection settings;
+            CommandLineProcessor.ProcessArguments(args);
+            settings = CommandLineProcessor.Settings;
+            var client = await GetClientAsync(settings);
+            var result = await new GenericFile().ProcessGenericFile(settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue(result.ExitCode == ExitCode.Success && result.PointsFound == 4 && result.PointsFailed == 0, "Processing a generic epoch file failed");
+        }
+
+        [TestMethod]
+        public async Task TestEpoch1()
+        {
+            var args = new string[] { "-input", Path.Combine (TestFilesPath, "epoch_s.csv"),
+                "-format", "Generic",
+                "-timetype", "epoch",
+                "-Precision", "Seconds",
+                "-table" ,"epoch"};
+            InfluxerConfigSection settings;
+            CommandLineProcessor.ProcessArguments(args);
+            settings = CommandLineProcessor.Settings;
+            var client = await GetClientAsync(settings);
+            var result = await new GenericFile().ProcessGenericFile(settings.InputFileName, client);
+            //Debug.WriteLine (result.ToString ());
+            Assert.IsTrue(result.ExitCode == ExitCode.Success && result.PointsFound == 4 && result.PointsFailed == 0, "Processing a generic epoch file failed");
         }
     }
 }

@@ -1,227 +1,227 @@
 DateTime,ServerName,BusinessTransaction,TransactionName,State,TransactionCount,TPS,ResponseTimeAvg,ResponseTimeNinetiethPercentile,ConcurrentUser,NumberOfFailedTransaction,NumberOfErroredTransaction,NumberOfSuccessfulTransaction,TotalSuspensionCount,NinetiethPercentileSuspension,NinetiethPercentileCPU,NinetiethPercentileWait,NinetiethPercentileSync,Alert-Warning,Alert-Critical,Rating,NumberOfIncompleteTransaction
-04/01/2016 00:00,int05a,Query,Query Order,Oregon,1,0,0,0.00287,0,0,0,1,0,0,38.78,0,0,0,1,0,0
-04/01/2016 00:00,int05b,Query,QueryProfiles,Oregon,1,0,0,0.00313,0,0,0,1,0,0,39.71,0,0,0,1,0,0
-04/01/2016 00:00,int05a,Query,QueryProfiles,Oregon,1,0,0,0.00338,0,0,0,1,0,0,38.37,0,0,0,1,0,0
-04/01/2016 00:00,int05b,Query,Query Order,Oregon,3,0.01,0,0.00339,1,0,0,3,0,0,41.1,0,0,0,3,0,0
-04/01/2016 00:00,app05d,Others,Other Transaction,Oregon,2,0.01,0,0.00345,1,0,0,2,0,0,96.36,0,0,0,2,0,0
-04/01/2016 00:00,int05a,transaction Read,Transaction Read QueryTransactionsHistory,Oregon,2,0.01,0,0.00379,1,0,0,2,0,0,25.54,0,0,0,2,0,0
-04/01/2016 00:00,int05b,transaction Read,Transaction Read QueryTransactionsHistory,Oregon,2,0.01,0.01,0.0074,1,0,0,2,0,0,29.84,0,0,0,2,0,0
-04/01/2016 00:00,int05a,Miscellaneous,GetUser,Oregon,5,0.02,0.01,0.00925,1,0,0,5,0,0,62.39,0,0,0,5,5,0
-04/01/2016 00:00,int05b,Miscellaneous,GetUser,Oregon,7,0.02,0.01,0.00915,1,0,0,7,0,0,74.91,0,0,0,7,0,0
-04/01/2016 00:00,app05d,Miscellaneous,GetUser,Oregon,1,0,0.02,0.0202,0,0,0,1,0,0,86.26,0,0,0,1,6,0
-04/01/2016 00:00,int05b,Miscellaneous,OpenOrder,Oregon,5,0.02,0.02,0.03211,1,0,0,5,0,0,62.4,0,0,0,5,7,0
-04/01/2016 00:00,int05a,Miscellaneous,OpenOrder,Oregon,3,0.01,0.03,0.05679,1,0,0,3,0,0,57.05,0,0,0,3,8,0
-04/01/2016 00:00,int05b,Others,Other Transaction,Oregon,100,0.33,0.01,0.03815,1,0,0,100,0,0,95.71,0,0,0,100,8,0
-04/01/2016 00:00,int05a,Others,Other Transaction,Oregon,92,0.31,0.01,0.02244,1,0,0,92,0,0,96.67,0,0,0,92,6,0
-04/01/2016 00:00,app05c,Others,Other Transaction,Oregon,6,0.02,0.12,0.20649,1,0,0,6,0,0,4.01,0,0,0,6,9,0
-04/01/2016 00:00,int06a,Others,Other Transaction,Florida,40,0.13,0,0.00386,1,0,0,40,0,0,36.22,0,0,0,40,0,0
-04/01/2016 00:00,int06b,Others,Other Transaction,Florida,39,0.13,0,0.00407,1,0,0,39,0,0,30.51,0,0,0,39,10,0
-04/01/2016 00:00,app06b,Others,Other Transaction,Illinois,2,0.01,0,0.00029,1,0,0,2,0,0,96.67,0,0,0,2,0,0
-04/01/2016 00:00,app06a,Others,Other Transaction,Illinois,2,0.01,0,0.00033,1,0,0,2,0,0,95.79,0,0,0,2,0,0
-04/01/2016 00:00,int06a,Query,QueryProfiles,Illinois,1,0,0,0.0038,0,0,0,1,0,0,35.42,0,0,0,1,0,0
-04/01/2016 00:00,int06a,transaction Read,Transaction Read QueryTransactionsHistory,Illinois,2,0.01,0.01,0.00807,1,0,0,2,0,0,25.36,0,0,0,2,0,0
-04/01/2016 00:00,app06d,Query,Query Order,Illinois,3,0.01,0.01,0.02205,1,0,0,3,0,0,45.32,0,0,0,3,6,0
-04/01/2016 00:00,app06i,Others,Other Transaction,Illinois,40,0.13,0.01,0.01184,1,0,0,40,0,0,42.89,0,0,0,40,0,0
-04/01/2016 00:00,int06a,Miscellaneous,GetUser,Illinois,21,0.07,0.01,0.01476,1,0,0,21,0,0,75.84,0,0,0,21,0,0
-04/01/2016 00:00,int06a,Miscellaneous,OpenOrder,Illinois,3,0.01,0.03,0.0374,1,0,0,3,0,0,64.4,0,0,0,3,7,0
-04/01/2016 00:00,app06d,Miscellaneous,GetUser,Illinois,1,0,0.04,0.03805,0,0,0,1,0,0,93.5,0,0,0,1,8,0
-04/01/2016 00:00,int06a,LedgerRead,LedgerRead GetOrderInformation,Illinois,9,0.03,0.04,0.03798,1,0,0,9,0,0,54.21,0,0,0,9,8,0
-04/01/2016 00:00,int06a,Others,Other Transaction,Illinois,261,0.87,0.01,0.013,1,0,0,261,0,0,32.04,0,0,0,261,0,0
-04/01/2016 00:00,app06e,Others,Other Transaction,Illinois,84,0.28,0.01,0.01934,1,0,0,84,0,0,40.61,0,0,0,84,5,0
-04/01/2016 00:00,app06d,Others,Other Transaction,Illinois,27,0.09,0.02,0.01294,1,0,0,27,0,0,15.66,0,0,0,27,0,0
-04/01/2016 00:00,app06h,Others,Other Transaction,Illinois,43,0.14,0.02,0.01966,1,0,0,43,0,0,37.85,0,0,0,43,6,0
-04/01/2016 00:00,app06d,Miscellaneous,OpenOrder,Illinois,1,0,0.32,0.31599,0,0,0,1,1,12.2,45.8,0,0,0,1,9,0
-04/01/2016 00:00,app01t,Query,Query Order,California,1,0,0,0.00331,0,0,0,1,0,0,49.94,0,0,0,1,0,0
-04/01/2016 00:00,int01a,Query,QueryProfiles,California,1,0,0,0.00405,0,0,0,1,0,0,37.48,0,0,0,1,0,0
-04/01/2016 00:00,app01r,Query,QueryProfiles,California,1,0,0,0.00423,0,0,0,1,0,0,37.71,0,0,0,1,0,0
-04/01/2016 00:00,app01q,Query,QueryProfiles,California,1,0,0,0.00428,0,0,0,1,0,0,41.64,0,0,0,1,0,0
-04/01/2016 00:00,app101d,Query,QueryProfiles,California,1,0,0,0.00445,0,0,0,1,0,0,37.91,0,0,0,1,0,0
-04/01/2016 00:00,app01o,Query,QueryProfiles,California,1,0,0,0.00458,0,0,0,1,0,0,35.57,0,0,0,1,0,0
-04/01/2016 00:00,app101m,Query,QueryProfiles,California,1,0,0.01,0.00712,0,0,0,1,0,0,21.57,0,0,0,1,0,0
-04/01/2016 00:00,app101d,Save Order,Save Order Begin,California,2,0.01,0.01,0.00922,1,0,0,2,0,0,44.3,0,0,0,2,0,0
-04/01/2016 00:00,app01z,Save Order,Save Order Begin,California,1,0,0.01,0.01217,0,0,0,1,0,0,27.53,0,0,0,1,0,0
-04/01/2016 00:00,app101i,Save Order,Save Order Begin,California,1,0,0.01,0.01442,0,0,0,1,0,0,19.14,0,0,0,1,0,0
-04/01/2016 00:00,app01f,Save Order,Save Order Begin,California,2,0.01,0.01,0.01578,1,0,0,2,0,0,36.63,0,0,0,2,0,0
-04/01/2016 00:00,app01t,Miscellaneous,Documents Disburse,California,1,0,0.02,0.01595,0,0,0,1,0,0,12.58,0,0,0,1,0,0
-04/01/2016 00:00,app01z,Miscellaneous,Documents Disburse,California,1,0,0.02,0.01603,0,0,0,1,0,0,11.64,0,0,0,1,0,0
-04/01/2016 00:00,app01r,Miscellaneous,GetUser,California,1,0,0.02,0.02053,0,0,0,1,0,0,86.06,0,0,0,1,0,0
-04/01/2016 00:00,app101l,Miscellaneous,GetUser,California,1,0,0.02,0.02187,0,0,0,1,0,0,89.24,0,0,0,1,0,0
-04/01/2016 00:00,app101m,Miscellaneous,GetUser,California,2,0.01,0.02,0.02455,1,0,0,2,0,0,86.42,0,0,0,2,0,0
-04/01/2016 00:00,int01a,Save Order,Save Order Begin,California,2,0.01,0.02,0.02583,1,0,0,2,0,0,11.42,0,0,0,2,0,0
-04/01/2016 00:00,app01q,Miscellaneous,GetUser,California,2,0.01,0.03,0.02925,1,0,0,2,0,0,84.29,0,0,0,2,0,0
-04/01/2016 00:00,int01a,transaction Read,Transaction Read QueryTransactionsHistory,California,16,0.05,0.01,0.01275,1,0,0,16,0,0,27.57,0,0,0,16,0,0
-04/01/2016 00:00,app101e,Save Order,Save Order Begin,California,3,0.01,0.02,0.03253,1,0,0,3,0,0,40.64,0,0,0,3,0,0
-04/01/2016 00:00,app101f,Others,Other Transaction,California,39,0.13,0.01,0.01787,1,0,0,39,0,0,38.79,0,0,0,39,0,0
-04/01/2016 00:00,app101e,Miscellaneous,GetUser,California,26,0.09,0.02,0.02356,1,0,0,26,0,0,84.71,0,0,0,26,0,0
-04/01/2016 00:00,app01m,Others,Other Transaction,California,40,0.13,0.01,0.01572,1,0,0,40,0,0,36.52,0,0,0,40,0,0
-04/01/2016 00:00,app01h,Others,Other Transaction,California,84,0.28,0.01,0.01796,1,0,0,84,0,0,34.99,0,0,0,84,0,0
-04/01/2016 00:00,app01o,Miscellaneous,GetUser,California,3,0.01,0.03,0.03858,1,0,0,3,0,0,75.34,0,0,0,3,5,0
-04/01/2016 00:00,app101d,Miscellaneous,GetUser,California,11,0.04,0.03,0.02732,1,0,0,11,0,0,90.16,0,0,0,11,0,0
-04/01/2016 00:00,app01w,Miscellaneous,GetUser,California,3,0.01,0.03,0.04058,1,0,0,3,0,0,74.21,0,0,0,3,5,0
-04/01/2016 00:00,app01i,Others,Other Transaction,California,60,0.2,0.01,0.01972,1,0,0,60,0,0,34.75,0,0,0,60,0,0
-04/01/2016 00:00,app01l,Miscellaneous,GetUser,California,3,0.01,0.03,0.0412,1,0,0,3,0,0,78.13,0,0,0,3,5,0
-04/01/2016 00:00,app01f,Others,Other Transaction,California,91,0.3,0.01,0.02218,1,0,0,91,0,0,96.67,0,0,0,91,0,0
-04/01/2016 00:00,app01e,Others,Other Transaction,California,60,0.2,0.01,0.02361,1,0,0,60,0,0,35.16,0,0,0,60,0,0
-04/01/2016 00:00,app01y,Others,Other Transaction,California,65,0.22,0.01,0.02514,1,0,0,65,0,0,31.3,0,0,0,65,0,0
-04/01/2016 00:00,int01a,Miscellaneous,GetUser,California,114,0.38,0.02,0.02568,1,0,0,114,0,0,88.41,0,0,0,114,0,0
-04/01/2016 00:00,app101h,Others,Other Transaction,California,85,0.28,0.01,0.01658,1,0,0,85,0,0,33.03,0,0,0,85,0,0
-04/01/2016 00:00,app101m,Miscellaneous,GetProfile,California,1,0,0.05,0.04973,0,0,0,1,0,0,63.66,0,0,0,1,5,0
-04/01/2016 00:00,app101c,Others,Other Transaction,California,40,0.13,0.01,0.02564,1,0,0,40,0,0,28.05,0,0,0,40,0,0
-04/01/2016 00:00,app101k,Others,Other Transaction,California,85,0.28,0.01,0.02557,1,0,0,85,0,0,35.36,0,0,0,85,0,0
-04/01/2016 00:00,app01j,Miscellaneous,GetUser,California,12,0.04,0.03,0.04773,1,0,0,12,0,0,87.96,0,0,0,12,5,0
-04/01/2016 00:00,app01k,Others,Other Transaction,California,80,0.27,0.01,0.02563,1,0,0,80,0,0,32.71,0,0,0,80,0,0
-04/01/2016 00:00,app01q,Others,Other Transaction,California,61,0.2,0.01,0.0287,1,0,0,61,0,0,99.13,0,0,0,61,0,0
-04/01/2016 00:00,app101j,Others,Other Transaction,California,81,0.27,0.01,0.02387,1,0,0,81,0,0,32.28,0,0,0,81,0,0
-04/01/2016 00:00,app01j,Save Order,Save Order Begin,California,3,0.01,0.02,0.05394,1,0,0,3,0,0,42.56,0,0,0,3,5,0
-04/01/2016 00:00,app01p,Others,Other Transaction,California,40,0.13,0.01,0.01591,1,0,0,40,0,0,31.61,0,0,0,40,0,0
-04/01/2016 00:00,app01n,Others,Other Transaction,California,60,0.2,0.01,0.02673,1,0,0,60,0,0,26.7,0,0,0,60,0,0
-04/01/2016 00:00,app01t,Others,Other Transaction,California,100,0.33,0.01,0.02692,1,0,0,100,0,0,49.89,0,0,0,100,0,0
-04/01/2016 00:00,app01z,Miscellaneous,GetUser,California,22,0.07,0.03,0.03296,1,0,0,22,0,0,87.57,0,0,0,22,0,0
-04/01/2016 00:00,app01l,Save Order,Save Order Begin,California,2,0.01,0.04,0.06387,1,0,0,2,0,0,10.61,0,0,0,2,6,0
-04/01/2016 00:00,app01q,Miscellaneous,GetProfile,California,1,0,0.07,0.07334,0,0,0,1,0,0,52.26,0,0,0,1,6,0
-04/01/2016 00:00,int01a,LedgerRead,LedgerRead GetLedger,California,14,0.05,0.03,0.05695,1,0,0,14,0,0,77.66,0,0,0,14,5,0
-04/01/2016 00:00,app101d,Miscellaneous,Documents Disburse,California,2,0.01,0.06,0.07467,1,0,0,2,0,0,7.38,0,0,0,2,6,0
-04/01/2016 00:00,app101b,Others,Other Transaction,California,66,0.22,0.01,0.01636,1,0,0,66,0,0,36.39,0,0,0,66,0,0
-04/01/2016 00:00,app101e,Query,Query Order,California,3,0.01,0.03,0.0775,1,0,0,3,0,0,46.35,0,0,0,3,6,0
-04/01/2016 00:00,app01z,Others,Other Transaction,California,121,0.4,0.01,0.03895,1,0,0,121,0,0,93.18,0,0,0,121,5,0
-04/01/2016 00:00,app01o,Others,Other Transaction,California,78,0.26,0.01,0.03567,1,0,0,78,0,0,98.08,0,0,0,78,0,0
-04/01/2016 00:00,app101e,Miscellaneous,Documents Disburse,California,2,0.01,0.05,0.08977,1,0,0,2,0,0,23.18,0,0,0,2,6,0
-04/01/2016 00:00,app101m,Query,Query Order,California,3,0.01,0.03,0.09055,1,0,0,3,0,0,39.41,0,0,0,3,7,0
-04/01/2016 00:00,app01z,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,0.1,0.10032,0,0,0,1,0,0,70.9,0,0,0,1,7,0
-04/01/2016 00:00,app01s,Others,Other Transaction,California,43,0.14,0.01,0.02875,1,0,0,43,0,0,35.57,0,0,0,43,0,0
-04/01/2016 00:00,app101l,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,0.11,0.11086,0,0,0,1,0,0,61.21,0,0,0,1,7,0
-04/01/2016 00:00,app01z,ProForm LookUpSearch,ProForm LookUpSearch BeginQueryTable,California,2,0.01,0.12,0.1325,1,0,0,2,0,0,20.35,0,0,0,2,7,0
-04/01/2016 00:00,app01v,Others,Other Transaction,California,60,0.2,0.01,0.03272,1,0,0,60,0,0,34.59,0,0,0,60,0,0
-04/01/2016 00:00,app101a,Others,Other Transaction,California,46,0.15,0.02,0.05852,1,0,0,46,0,0,29.7,0,0,0,46,6,0
-04/01/2016 00:00,app101i,Others,Other Transaction,California,44,0.15,0.01,0.0226,1,0,0,44,0,0,96.54,0,0,0,44,0,0
-04/01/2016 00:00,app01l,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.15,0.14883,0,0,0,1,1,91.45,1.58,0,0,0,1,7,0
-04/01/2016 00:00,app01j,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,0.16,0.15523,0,0,0,1,0,0,79.76,0,0,0,1,7,0
-04/01/2016 00:00,app101m,Others,Other Transaction,California,91,0.3,0.02,0.05258,1,0,0,91,0,0,98.95,0,0,0,91,5,0
-04/01/2016 00:00,app101d,Others,Other Transaction,California,299,1,0.01,0.02489,1,0,0,299,0,0,83.33,0,0,0,299,0,0
-04/01/2016 00:00,app101g,Others,Other Transaction,California,74,0.25,0.02,0.06144,1,0,0,74,0,0,34.7,0,0,0,74,6,0
-04/01/2016 00:00,app01d,Others,Other Transaction,California,42,0.14,0.02,0.02899,1,0,0,42,0,0,33.3,0,0,0,42,0,0
-04/01/2016 00:00,app01g,Others,Other Transaction,California,85,0.28,0.01,0.02822,1,0,0,85,0,0,31.83,0,0,0,85,0,0
-04/01/2016 00:00,int01a,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.21,0.21334,0,0,0,1,1,98.95,1.03,0,0,0,1,7,0
-04/01/2016 00:00,int01a,Miscellaneous,OpenOrder,California,25,0.08,0.06,0.06723,1,0,0,25,0,0,74.39,0,0,0,25,6,0
-04/01/2016 00:00,app01x,Others,Other Transaction,California,41,0.14,0.03,0.06231,1,0,0,41,0,0,29.44,0,0,0,41,6,0
-04/01/2016 00:00,app01r,Miscellaneous,OpenOrder,California,1,0,0.23,0.22689,0,0,0,1,0,0,45.22,0,0,0,1,7,0
-04/01/2016 00:00,app01r,Query,Query Order,California,3,0.01,0.09,0.24576,1,0,0,3,0,0,29.59,0,0,0,3,7,0
-04/01/2016 00:00,app101d,Miscellaneous,OpenOrder,California,1,0,0.25,0.24642,0,0,0,1,0,0,45.85,0,0,0,1,7,0
-04/01/2016 00:00,app01c,Others,Other Transaction,California,63,0.21,0.02,0.05117,1,0,0,63,0,0,31.63,0,0,0,63,5,0
-04/01/2016 00:00,app01r,Others,Other Transaction,California,71,0.24,0.02,0.02889,1,0,0,71,0,0,35.07,0,0,0,71,0,0
-04/01/2016 00:00,app01u,Others,Other Transaction,California,113,0.38,0.01,0.01944,1,0,0,113,0,0,36.53,0,0,0,113,0,0
-04/01/2016 00:00,app01l,Others,Other Transaction,California,220,0.73,0.02,0.03737,1,0,0,220,0,0,93.68,0,0,0,220,0,0
-04/01/2016 00:00,app01l,Miscellaneous,OpenOrder,California,3,0.01,0.24,0.25997,1,0,0,3,0,0,55.48,0,0,0,3,8,0
-04/01/2016 00:00,app101e,Miscellaneous,OpenOrder,California,1,0,0.26,0.26124,0,0,0,1,0,0,37.83,0,0,0,1,8,0
-04/01/2016 00:00,int01a,Query,Query Order,California,9,0.03,0.05,0.13893,1,0,0,9,0,0,46.2,0,0,0,9,7,0
-04/01/2016 00:00,app01o,Miscellaneous,OpenOrder,California,1,0,0.3,0.30249,0,0,0,1,0,0,34.63,0,0,0,1,8,0
-04/01/2016 00:00,app101e,Others,Other Transaction,California,227,0.76,0.01,0.01965,1,0,0,227,0,0,95,0,0,0,227,0,0
-04/01/2016 00:00,int01a,LedgerRead,LedgerRead GetOrderInformation,California,37,0.12,0.07,0.06755,1,0,0,37,0,0,69.85,0,0,0,37,6,0
-04/01/2016 00:00,app101m,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.38,0.37775,0,0,0,1,0,0,78.29,0,0,0,1,8,0
-04/01/2016 00:00,app01q,Miscellaneous,OpenOrder,California,1,0,0.43,0.43257,0,0,0,1,0,0,29.18,0,0,0,1,8,0
-04/01/2016 00:00,app101m,Miscellaneous,OpenOrder,California,1,0,0.46,0.46101,0,0,0,1,0,0,26.17,0,0,0,1,8,0
-04/01/2016 00:00,app01q,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.48,0.48274,0,0,0,1,1,24.41,60.57,0,0,0,1,8,0
-04/01/2016 00:00,app01j,Others,Other Transaction,California,171,0.57,0.04,0.06289,1,0,0,171,0,0,98.18,0,0,0,171,6,0
-04/01/2016 00:00,int01a,LedgerRead,LedgerRead QueryLedgers,California,9,0.03,0.61,0.66477,1,0,0,9,0,0,0.34,0,0,0,9,8,0
-04/01/2016 00:00,int01a,Others,Other Transaction,California,912,3.04,0.02,0.03057,1,0,0,912,0,0,95,0,0,0,912,0,0
-04/01/2016 00:00,app01w,Others,Other Transaction,California,87,0.29,0.04,0.03638,1,0,0,87,0,0,31.65,0,0,0,87,0,0
-04/01/2016 00:00,app101d,Query,Query Order,California,3,0.01,0.35,1.04301,1,0,0,3,0,0,43.64,0,0,0,3,8,0
-04/01/2016 00:00,app01o,Query,Query Order,California,3,0.01,0.38,1.12527,1,0,0,3,0,0,44.42,0,0,0,3,8,0
-04/01/2016 00:00,app01q,Query,Query Order,California,3,0.01,0.39,1.163,1,0,0,3,0,0,40.04,0,0,0,3,8,0
-04/01/2016 00:00,app101l,Others,Other Transaction,California,96,0.32,0.04,0.03141,1,0,0,96,0,0,34.09,0,0,0,96,0,0
-04/01/2016 00:00,app101m,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,2.02,2.02285,0,0,0,1,1,4.3,50.18,0,0,0,1,9,0
-04/01/2016 00:00,app01q,ProForm LookUpSearch,ProForm LookUpSearch BeginQueryTable,California,1,0,2.97,2.96736,0,0,0,1,1,2.42,32.04,0,0,0,1,9,0
-04/01/2016 00:00,app01l,Query,Query Order,California,10,0.03,0.74,3.28895,1,0,0,10,0,0,41.59,0,0,0,10,9,0
-04/01/2016 00:00,app101i,Save Order,Save Order End,California,1,0,7.56,7.56375,0,0,0,1,1,6.7,93.36,0,0,0,1,9,0
-04/01/2016 00:00,int01a,Save Order,Save Order End,California,2,0.01,8.24,8.34521,1,0,0,2,2,7.85,85.61,0,0,0,2,9,0
-04/01/2016 00:00,app01f,Save Order,Save Order End,California,2,0.01,8.16,8.59885,1,0,0,2,2,12.55,94.12,0,0,0,2,9,0
-04/01/2016 00:00,app01z,Save Order,Save Order End,California,1,0,9.34,9.33821,0,0,0,1,1,5.28,78.54,0,0,0,1,9,0
-04/01/2016 00:00,app101e,Save Order,Save Order End,California,3,0.01,8.28,9.67299,1,0,0,3,3,11.29,90.22,0,0,0,3,9,0
-04/01/2016 00:00,app101d,Save Order,Save Order End,California,2,0.01,11.49,12.62308,1,0,0,2,2,5.85,62.18,0,0,0,2,9,0
-04/01/2016 00:00,app01j,Save Order,Save Order End,California,2,0.01,14.46,15.0603,1,0,0,2,2,11.18,83.03,0,0,0,2,9,0
-04/01/2016 00:00,app01l,Save Order,Save Order End,California,2,0.01,13.56,15.27204,1,0,0,2,2,8.18,78.48,0,0,0,2,9,0
-04/01/2016 00:00,app02e,Others,Other Transaction,Washington,1,0,0,0.00023,0,0,0,1,0,0,96.09,0,0,0,1,0,0
-04/01/2016 00:05,int02b,Others,Other Transaction,Washington,6,0.02,0,0.0004,1,0,0,6,0,0,95.83,0,0,0,6,0,0
-04/01/2016 00:00,int02b,Query,Query Order,Washington,6,0.02,0,0.00289,1,0,0,6,0,0,38.6,0,0,0,6,0,0
-04/01/2016 00:00,int02a,Query,QueryProfiles,Washington,1,0,0,0.00356,0,0,0,1,0,0,34.33,0,0,0,1,0,0
-04/01/2016 00:05,app02g,Others,Other Transaction,Washington,1,0,0,0.00381,0,0,0,1,0,0,23.52,0,0,0,1,0,0
-04/01/2016 00:00,app02c,transaction Read,Transaction Read QueryTransactionsHistory,Washington,1,0,0,0.00396,0,0,0,1,0,0,28.79,0,0,0,1,0,0
-04/01/2016 00:00,app02g,Query,QueryProfiles,Washington,2,0.01,0,0.00401,1,0,0,2,0,0,40.23,0,0,0,2,0,0
-04/01/2016 00:00,app02g,transaction Read,Transaction Read QueryTransactionsHistory,Washington,3,0.01,0,0.00519,1,0,0,3,0,0,26.64,0,0,0,3,0,0
-04/01/2016 00:00,app02c,Report,Report EndExportReport,Washington,2,0.01,0.01,0.00594,1,0,0,2,0,0,88.95,0,0,0,2,0,0
-04/01/2016 00:05,int02b,Miscellaneous,GetUser,Washington,1,0,0.01,0.00678,0,0,0,1,0,0,63.79,0,0,0,1,0,0
-04/01/2016 00:00,app02f,transaction Read,Transaction Read QueryTransactionsHistory,Washington,3,0.01,0.01,0.0082,1,0,0,3,0,0,31.56,0,0,0,3,0,0
-04/01/2016 00:05,app02f,Others,Other Transaction,Washington,4,0.01,0,0.00825,1,0,0,4,0,0,29.84,0,0,0,4,0,0
-04/01/2016 00:00,int02b,Miscellaneous,GetUser,Washington,19,0.06,0.01,0.00874,1,0,0,19,0,0,67.41,0,0,0,19,0,0
-04/01/2016 00:00,app02f,Save Order,Save Order Begin,Washington,1,0,0.01,0.00886,0,0,0,1,0,0,31.08,0,0,0,1,0,0
-04/01/2016 00:00,int02b,LedgerRead,LedgerRead GetLedger,Washington,3,0.01,0.01,0.01079,1,0,0,3,0,0,53.58,0,0,0,3,0,0
-04/01/2016 00:00,app02g,Save Order,Save Order Begin,Washington,3,0.01,0.01,0.01172,1,0,0,3,0,0,38.44,0,0,0,3,0,0
-04/01/2016 00:00,int02a,Miscellaneous,GetUser,Washington,25,0.08,0.01,0.01018,1,0,0,25,0,0,67.43,0,0,0,25,0,0
-04/01/2016 00:00,app02g,Miscellaneous,Documents Disburse,Washington,1,0,0.01,0.0127,0,0,0,1,0,0,13.41,0,0,0,1,0,0
-04/01/2016 00:00,int02a,LedgerRead,LedgerRead GetLedger,Washington,7,0.02,0.01,0.01467,1,0,0,7,0,0,58.23,0,0,0,7,0,0
-04/01/2016 00:00,app02c,Save Order,Save Order Begin,Washington,2,0.01,0.01,0.01831,1,0,0,2,0,0,42.7,0,0,0,2,0,0
-04/01/2016 00:00,app02e,Miscellaneous,GetUser,Washington,1,0,0.02,0.02179,0,0,0,1,0,0,89.38,0,0,0,1,0,0
-04/01/2016 00:00,app02f,Query,QueryProfiles,Washington,2,0.01,0.01,0.02301,1,0,0,2,0,0,34.92,0,0,0,2,0,0
-04/01/2016 00:00,int02b,Miscellaneous,OpenOrder,Washington,6,0.02,0.02,0.02478,1,0,0,6,0,0,63.54,0,0,0,6,0,0
-04/01/2016 00:00,int02b,LedgerRead,LedgerRead GetOrderInformation,Washington,5,0.02,0.02,0.02774,1,0,0,5,0,0,48.23,0,0,0,5,5,0
-04/01/2016 00:00,int02a,Save Order,Save Order Begin,Washington,2,0.01,0.02,0.03065,1,0,0,2,0,0,37.63,0,0,0,2,5,0
-04/01/2016 00:00,int02a,LedgerRead,LedgerRead GetOrderInformation,Washington,1,0,0.03,0.03117,0,0,0,1,0,0,46.54,0,0,0,1,5,0
-04/01/2016 00:00,app02f,Miscellaneous,GetUser,Washington,37,0.12,0.02,0.02752,1,0,0,37,0,0,84.01,0,0,0,37,5,0
-04/01/2016 00:00,app02f,Miscellaneous,Documents Disburse,Washington,1,0,0.05,0.04633,0,0,0,1,0,0,4.68,0,0,0,1,6,0
-04/01/2016 00:00,app02g,LedgerRead,LedgerRead GetOrderInformation,Washington,3,0.01,0.05,0.0519,1,0,0,3,0,0,64.44,0,0,0,3,6,0
-04/01/2016 00:00,app02g,Query,Query Order,Washington,5,0.02,0.01,0.05327,1,0,0,5,0,0,44.65,0,0,0,5,6,0
-04/01/2016 00:00,app02c,Query,Query Order,Washington,6,0.02,0.02,0.0577,1,0,0,6,0,0,44.2,0,0,0,6,6,0
-04/01/2016 00:00,app02g,Miscellaneous,GetUser,Washington,50,0.17,0.02,0.02149,1,0,0,50,0,0,88.61,0,0,0,50,0,0
-04/01/2016 00:00,app02c,Miscellaneous,GetUser,Washington,7,0.02,0.02,0.01775,1,0,0,7,0,0,81.09,0,0,0,7,0,0
-04/01/2016 00:00,app02c,Report,Report FreeReport,Washington,1,0,0.09,0.09487,0,0,0,1,0,0,6.51,0,93.28,0,1,7,0
-04/01/2016 00:00,app02c,ProForm LookUpSearch,ProForm LookUpSearch BeginQueryTable,Washington,2,0.01,0.09,0.09536,1,0,0,2,0,0,47.1,0,0,0,2,7,0
-04/01/2016 00:00,app02f,Miscellaneous,OpenOrder,Washington,3,0.01,0.08,0.12753,1,0,0,3,0,0,73.37,0,0,0,3,7,0
-04/01/2016 00:00,int02a,Miscellaneous,OpenOrder,Washington,8,0.03,0.05,0.13363,1,0,0,8,0,0,59.89,0,0,0,8,7,0
-04/01/2016 00:00,app02c,Miscellaneous,OpenOrder,Washington,4,0.01,0.1,0.16488,1,0,0,4,0,0,65.18,0,0,0,4,8,0
-04/01/2016 00:00,app02d,Others,Other Transaction,Washington,173,0.58,0.01,0.01632,1,0,0,173,0,0,34.88,0,0,0,173,0,0
-04/01/2016 00:00,app02c,ProForm LookUpSearch,Proform LookUpSearch GetRows,Washington,5,0.02,0.17,0.17644,1,0,0,5,0,0,13.08,0,0,0,5,8,0
-04/01/2016 00:00,app02g,Miscellaneous,OpenOrder,Washington,5,0.02,0.1,0.19118,1,0,0,5,0,0,81.02,0,0,0,5,8,0
-04/01/2016 00:00,app02h,Others,Other Transaction,Washington,6,0.02,0.1,0.16396,1,0,0,6,0,0,96.4,0,0,0,6,7,0
-04/01/2016 00:00,int02a,LedgerRead,LedgerRead QueryLedgers,Washington,3,0.01,0.22,0.23793,1,0,0,3,0,0,0.79,0,0,0,3,8,0
-04/01/2016 00:00,int02a,Others,Other Transaction,Washington,347,1.16,0.02,0.04731,1,0,0,347,0,0,90,0,0,0,347,6,0
-04/01/2016 00:00,app02f,Others,Other Transaction,Washington,195,0.65,0.01,0.01752,1,0,0,195,0,0,98.18,0,0,0,195,0,0
-04/01/2016 00:00,int02b,Others,Other Transaction,Washington,140,0.47,0.01,0.03937,1,0,0,140,0,0,92.86,0,0,0,140,5,0
-04/01/2016 00:00,app02g,Others,Other Transaction,Washington,280,0.93,0.01,0.01958,1,0,0,280,0,0,95.26,0,0,0,280,0,0
-04/01/2016 00:00,int02a,Query,Query Order,Washington,8,0.03,0.09,0.03537,1,0,0,8,0,0,40.74,0,0,0,8,5,0
-04/01/2016 00:00,app02c,Others,Other Transaction,Washington,379,1.26,0.03,0.06627,1,0,0,379,0,0,99.29,0,0,0,379,7,0
-04/01/2016 00:00,app02c,Report,Report BeginExportReport,Washington,2,0.01,0.65,1.28978,1,0,0,2,0,0,90.18,0,0,0,2,9,0
-04/01/2016 00:00,app02i,Others,Other Transaction,Washington,24,0.08,0.18,0.48789,1,0,0,24,0,0,95.65,0,0,0,24,8,0
-04/01/2016 00:00,int02a,Save Order,Save Order End,Washington,1,0,3.03,3.033,0,0,0,1,1,16.11,80.31,0,0,0,1,9,0
-04/01/2016 00:00,int02a,ProForm LookUpSearch,Proform LookUpSearch GetRows,Washington,2,0.01,4.14,4.36129,1,0,0,2,2,4.67,53.77,0,0,0,2,9,0
-04/01/2016 00:00,app02g,Save Order,Save Order End,Washington,3,0.01,5.17,5.25012,1,0,0,3,3,6.2,69.89,0,0,0,3,9,0
-04/01/2016 00:00,app02f,Save Order,Save Order End,Washington,1,0,6.03,6.02903,0,0,0,1,1,5.14,67.2,0,0,0,1,9,0
-04/01/2016 00:00,app02c,Save Order,Save Order End,Washington,2,0.01,6.47,7.06822,1,0,0,2,2,7.28,72.44,0,0,0,2,9,0
-04/01/2016 00:00,app04p,Others,Other Transaction,Texas,4,0.01,0,0.00023,1,0,0,4,0,0,97.73,0,0,0,4,0,0
-04/01/2016 00:00,app04f,Others,Other Transaction,Texas,2,0.01,0,0.00028,1,0,0,2,0,0,97.39,0,0,0,2,0,0
-04/01/2016 00:00,app04i,Others,Other Transaction,Texas,4,0.01,0,0.00033,1,0,0,4,0,0,96.19,0,0,0,4,0,0
-04/01/2016 00:00,app04l,Others,Other Transaction,Texas,4,0.01,0,0.00042,1,0,0,4,0,0,99.57,0,0,0,4,0,0
-04/01/2016 00:05,int04b,Others,Other Transaction,Texas,3,0.01,0,0.00289,1,0,0,3,0,0,36.46,0,0,0,3,0,0
-04/01/2016 00:00,app04o,Report,Report EndExportReport,Texas,2,0.01,0,0.00332,1,0,0,2,0,0,81.16,0,0,0,2,0,0
-04/01/2016 00:00,int04b,Query,QueryProfiles,Texas,2,0.01,0,0.00402,1,0,0,2,0,0,36.29,0,0,0,2,0,0
-04/01/2016 00:00,int04a,Query,QueryProfiles,Texas,4,0.01,0,0.00471,1,0,0,4,0,0,38.24,0,0,0,4,0,0
-04/01/2016 00:00,int04a,transaction Read,Transaction Read QueryTransactionsHistory,Texas,8,0.03,0,0.00497,1,0,0,8,0,0,32.25,0,0,0,8,0,0
-04/01/2016 00:05,int04a,Others,Other Transaction,Texas,1,0,0.01,0.00646,0,0,0,1,0,0,15.17,0,0,0,1,0,0
-04/01/2016 00:00,int04b,transaction Read,Transaction Read QueryTransactionsHistory,Texas,11,0.04,0,0.00537,1,0,0,11,0,0,34.02,0,0,0,11,0,0
-04/01/2016 00:00,int04a,Miscellaneous,GetUser,Texas,54,0.18,0.01,0.01087,1,0,0,54,0,0,74.07,0,0,0,54,0,0
-04/01/2016 00:00,int04b,Miscellaneous,OpenOrder,Texas,11,0.04,0.02,0.02033,1,0,0,11,0,0,62.55,0,0,0,11,0,0
-04/01/2016 00:00,int04b,Miscellaneous,GetUser,Texas,56,0.19,0.01,0.00861,1,0,0,56,0,0,69.93,0,0,0,56,0,0
-04/01/2016 00:00,app04o,Report,Report FreeReport,Texas,1,0,0.03,0.0314,0,0,0,1,0,0,8.3,0,0,0,1,6,0
-04/01/2016 00:00,int04b,LedgerRead,LedgerRead GetOrderInformation,Texas,21,0.07,0.02,0.02645,1,0,0,21,0,0,57.89,0,0,0,21,5,0
-04/01/2016 00:00,int04a,LedgerRead,LedgerRead GetOrderInformation,Texas,24,0.08,0.03,0.03091,1,0,0,24,0,0,62.08,0,0,0,24,6,0
-04/01/2016 00:00,int04a,Miscellaneous,OpenOrder,Texas,8,0.03,0.04,0.02653,1,0,0,8,0,0,65.34,0,0,0,8,5,0
-04/01/2016 00:00,app04o,Others,Other Transaction,Texas,14,0.05,0.03,0.13034,1,0,0,14,0,0,96.19,0,0,0,14,7,0
-04/01/2016 00:00,app04j,Others,Other Transaction,Texas,49,0.16,0.01,0.03164,1,0,0,49,0,0,90.56,0,0,0,49,6,0
-04/01/2016 00:00,app04o,Report,Report BeginExportReport,Texas,1,0,0.16,0.15949,0,0,0,1,0,0,1.63,0,98.33,0,1,9,0
-04/01/2016 00:00,app04h,Others,Other Transaction,Texas,9,0.03,0.09,0.15133,1,0,0,9,0,0,97.5,0,0,0,9,8,0
-04/01/2016 00:00,app04e,Others,Other Transaction,Texas,5,0.02,0.06,0.17617,1,0,0,5,0,0,95.91,0,0,0,5,9,0
-04/01/2016 00:00,app04n,Others,Other Transaction,Texas,28,0.09,0.02,0.0763,1,0,0,28,0,0,97.62,0,0,0,28,7,0
-04/01/2016 00:00,app04g,Others,Other Transaction,Texas,6,0.02,0.06,0.14751,1,0,0,6,0,0,96.25,0,0,0,6,8,0
-04/01/2016 00:00,app04m,Others,Other Transaction,Texas,5,0.02,0.1,0.19732,1,0,0,5,0,0,98.18,0,0,0,5,9,0
-04/01/2016 00:00,app04c,Others,Other Transaction,Texas,4,0.01,0.13,0.20113,1,0,0,4,0,0,1.32,0,0,0,4,9,0
-04/01/2016 00:00,int04a,Others,Other Transaction,Texas,161,0.54,0.01,0.01568,1,0,0,161,0,0,92.86,0,0,0,161,0,0
-04/01/2016 00:00,int04b,Others,Other Transaction,Texas,185,0.62,0.02,0.04987,1,0,0,185,0,0,91,0,0,0,185,7,0
+04/01/2017 00:00,int05a,Query,Query Order,Oregon,1,0,0,0.00287,0,0,0,1,0,0,38.78,0,0,0,1,0,0
+04/01/2017 00:00,int05b,Query,QueryProfiles,Oregon,1,0,0,0.00313,0,0,0,1,0,0,39.71,0,0,0,1,0,0
+04/01/2017 00:00,int05a,Query,QueryProfiles,Oregon,1,0,0,0.00338,0,0,0,1,0,0,38.37,0,0,0,1,0,0
+04/01/2017 00:00,int05b,Query,Query Order,Oregon,3,0.01,0,0.00339,1,0,0,3,0,0,41.1,0,0,0,3,0,0
+04/01/2017 00:00,app05d,Others,Other Transaction,Oregon,2,0.01,0,0.00345,1,0,0,2,0,0,96.36,0,0,0,2,0,0
+04/01/2017 00:00,int05a,transaction Read,Transaction Read QueryTransactionsHistory,Oregon,2,0.01,0,0.00379,1,0,0,2,0,0,25.54,0,0,0,2,0,0
+04/01/2017 00:00,int05b,transaction Read,Transaction Read QueryTransactionsHistory,Oregon,2,0.01,0.01,0.0074,1,0,0,2,0,0,29.84,0,0,0,2,0,0
+04/01/2017 00:00,int05a,Miscellaneous,GetUser,Oregon,5,0.02,0.01,0.00925,1,0,0,5,0,0,62.39,0,0,0,5,5,0
+04/01/2017 00:00,int05b,Miscellaneous,GetUser,Oregon,7,0.02,0.01,0.00915,1,0,0,7,0,0,74.91,0,0,0,7,0,0
+04/01/2017 00:00,app05d,Miscellaneous,GetUser,Oregon,1,0,0.02,0.0202,0,0,0,1,0,0,86.26,0,0,0,1,6,0
+04/01/2017 00:00,int05b,Miscellaneous,OpenOrder,Oregon,5,0.02,0.02,0.03211,1,0,0,5,0,0,62.4,0,0,0,5,7,0
+04/01/2017 00:00,int05a,Miscellaneous,OpenOrder,Oregon,3,0.01,0.03,0.05679,1,0,0,3,0,0,57.05,0,0,0,3,8,0
+04/01/2017 00:00,int05b,Others,Other Transaction,Oregon,100,0.33,0.01,0.03815,1,0,0,100,0,0,95.71,0,0,0,100,8,0
+04/01/2017 00:00,int05a,Others,Other Transaction,Oregon,92,0.31,0.01,0.02244,1,0,0,92,0,0,96.67,0,0,0,92,6,0
+04/01/2017 00:00,app05c,Others,Other Transaction,Oregon,6,0.02,0.12,0.20649,1,0,0,6,0,0,4.01,0,0,0,6,9,0
+04/01/2017 00:00,int06a,Others,Other Transaction,Florida,40,0.13,0,0.00386,1,0,0,40,0,0,36.22,0,0,0,40,0,0
+04/01/2017 00:00,int06b,Others,Other Transaction,Florida,39,0.13,0,0.00407,1,0,0,39,0,0,30.51,0,0,0,39,10,0
+04/01/2017 00:00,app06b,Others,Other Transaction,Illinois,2,0.01,0,0.00029,1,0,0,2,0,0,96.67,0,0,0,2,0,0
+04/01/2017 00:00,app06a,Others,Other Transaction,Illinois,2,0.01,0,0.00033,1,0,0,2,0,0,95.79,0,0,0,2,0,0
+04/01/2017 00:00,int06a,Query,QueryProfiles,Illinois,1,0,0,0.0038,0,0,0,1,0,0,35.42,0,0,0,1,0,0
+04/01/2017 00:00,int06a,transaction Read,Transaction Read QueryTransactionsHistory,Illinois,2,0.01,0.01,0.00807,1,0,0,2,0,0,25.36,0,0,0,2,0,0
+04/01/2017 00:00,app06d,Query,Query Order,Illinois,3,0.01,0.01,0.02205,1,0,0,3,0,0,45.32,0,0,0,3,6,0
+04/01/2017 00:00,app06i,Others,Other Transaction,Illinois,40,0.13,0.01,0.01184,1,0,0,40,0,0,42.89,0,0,0,40,0,0
+04/01/2017 00:00,int06a,Miscellaneous,GetUser,Illinois,21,0.07,0.01,0.01476,1,0,0,21,0,0,75.84,0,0,0,21,0,0
+04/01/2017 00:00,int06a,Miscellaneous,OpenOrder,Illinois,3,0.01,0.03,0.0374,1,0,0,3,0,0,64.4,0,0,0,3,7,0
+04/01/2017 00:00,app06d,Miscellaneous,GetUser,Illinois,1,0,0.04,0.03805,0,0,0,1,0,0,93.5,0,0,0,1,8,0
+04/01/2017 00:00,int06a,LedgerRead,LedgerRead GetOrderInformation,Illinois,9,0.03,0.04,0.03798,1,0,0,9,0,0,54.21,0,0,0,9,8,0
+04/01/2017 00:00,int06a,Others,Other Transaction,Illinois,261,0.87,0.01,0.013,1,0,0,261,0,0,32.04,0,0,0,261,0,0
+04/01/2017 00:00,app06e,Others,Other Transaction,Illinois,84,0.28,0.01,0.01934,1,0,0,84,0,0,40.61,0,0,0,84,5,0
+04/01/2017 00:00,app06d,Others,Other Transaction,Illinois,27,0.09,0.02,0.01294,1,0,0,27,0,0,15.66,0,0,0,27,0,0
+04/01/2017 00:00,app06h,Others,Other Transaction,Illinois,43,0.14,0.02,0.01966,1,0,0,43,0,0,37.85,0,0,0,43,6,0
+04/01/2017 00:00,app06d,Miscellaneous,OpenOrder,Illinois,1,0,0.32,0.31599,0,0,0,1,1,12.2,45.8,0,0,0,1,9,0
+04/01/2017 00:00,app01t,Query,Query Order,California,1,0,0,0.00331,0,0,0,1,0,0,49.94,0,0,0,1,0,0
+04/01/2017 00:00,int01a,Query,QueryProfiles,California,1,0,0,0.00405,0,0,0,1,0,0,37.48,0,0,0,1,0,0
+04/01/2017 00:00,app01r,Query,QueryProfiles,California,1,0,0,0.00423,0,0,0,1,0,0,37.71,0,0,0,1,0,0
+04/01/2017 00:00,app01q,Query,QueryProfiles,California,1,0,0,0.00428,0,0,0,1,0,0,41.64,0,0,0,1,0,0
+04/01/2017 00:00,app101d,Query,QueryProfiles,California,1,0,0,0.00445,0,0,0,1,0,0,37.91,0,0,0,1,0,0
+04/01/2017 00:00,app01o,Query,QueryProfiles,California,1,0,0,0.00458,0,0,0,1,0,0,35.57,0,0,0,1,0,0
+04/01/2017 00:00,app101m,Query,QueryProfiles,California,1,0,0.01,0.00712,0,0,0,1,0,0,21.57,0,0,0,1,0,0
+04/01/2017 00:00,app101d,Save Order,Save Order Begin,California,2,0.01,0.01,0.00922,1,0,0,2,0,0,44.3,0,0,0,2,0,0
+04/01/2017 00:00,app01z,Save Order,Save Order Begin,California,1,0,0.01,0.01217,0,0,0,1,0,0,27.53,0,0,0,1,0,0
+04/01/2017 00:00,app101i,Save Order,Save Order Begin,California,1,0,0.01,0.01442,0,0,0,1,0,0,19.14,0,0,0,1,0,0
+04/01/2017 00:00,app01f,Save Order,Save Order Begin,California,2,0.01,0.01,0.01578,1,0,0,2,0,0,36.63,0,0,0,2,0,0
+04/01/2017 00:00,app01t,Miscellaneous,Documents Disburse,California,1,0,0.02,0.01595,0,0,0,1,0,0,12.58,0,0,0,1,0,0
+04/01/2017 00:00,app01z,Miscellaneous,Documents Disburse,California,1,0,0.02,0.01603,0,0,0,1,0,0,11.64,0,0,0,1,0,0
+04/01/2017 00:00,app01r,Miscellaneous,GetUser,California,1,0,0.02,0.02053,0,0,0,1,0,0,86.06,0,0,0,1,0,0
+04/01/2017 00:00,app101l,Miscellaneous,GetUser,California,1,0,0.02,0.02187,0,0,0,1,0,0,89.24,0,0,0,1,0,0
+04/01/2017 00:00,app101m,Miscellaneous,GetUser,California,2,0.01,0.02,0.02455,1,0,0,2,0,0,86.42,0,0,0,2,0,0
+04/01/2017 00:00,int01a,Save Order,Save Order Begin,California,2,0.01,0.02,0.02583,1,0,0,2,0,0,11.42,0,0,0,2,0,0
+04/01/2017 00:00,app01q,Miscellaneous,GetUser,California,2,0.01,0.03,0.02925,1,0,0,2,0,0,84.29,0,0,0,2,0,0
+04/01/2017 00:00,int01a,transaction Read,Transaction Read QueryTransactionsHistory,California,16,0.05,0.01,0.01275,1,0,0,16,0,0,27.57,0,0,0,16,0,0
+04/01/2017 00:00,app101e,Save Order,Save Order Begin,California,3,0.01,0.02,0.03253,1,0,0,3,0,0,40.64,0,0,0,3,0,0
+04/01/2017 00:00,app101f,Others,Other Transaction,California,39,0.13,0.01,0.01787,1,0,0,39,0,0,38.79,0,0,0,39,0,0
+04/01/2017 00:00,app101e,Miscellaneous,GetUser,California,26,0.09,0.02,0.02356,1,0,0,26,0,0,84.71,0,0,0,26,0,0
+04/01/2017 00:00,app01m,Others,Other Transaction,California,40,0.13,0.01,0.01572,1,0,0,40,0,0,36.52,0,0,0,40,0,0
+04/01/2017 00:00,app01h,Others,Other Transaction,California,84,0.28,0.01,0.01796,1,0,0,84,0,0,34.99,0,0,0,84,0,0
+04/01/2017 00:00,app01o,Miscellaneous,GetUser,California,3,0.01,0.03,0.03858,1,0,0,3,0,0,75.34,0,0,0,3,5,0
+04/01/2017 00:00,app101d,Miscellaneous,GetUser,California,11,0.04,0.03,0.02732,1,0,0,11,0,0,90.16,0,0,0,11,0,0
+04/01/2017 00:00,app01w,Miscellaneous,GetUser,California,3,0.01,0.03,0.04058,1,0,0,3,0,0,74.21,0,0,0,3,5,0
+04/01/2017 00:00,app01i,Others,Other Transaction,California,60,0.2,0.01,0.01972,1,0,0,60,0,0,34.75,0,0,0,60,0,0
+04/01/2017 00:00,app01l,Miscellaneous,GetUser,California,3,0.01,0.03,0.0412,1,0,0,3,0,0,78.13,0,0,0,3,5,0
+04/01/2017 00:00,app01f,Others,Other Transaction,California,91,0.3,0.01,0.02218,1,0,0,91,0,0,96.67,0,0,0,91,0,0
+04/01/2017 00:00,app01e,Others,Other Transaction,California,60,0.2,0.01,0.02361,1,0,0,60,0,0,35.16,0,0,0,60,0,0
+04/01/2017 00:00,app01y,Others,Other Transaction,California,65,0.22,0.01,0.02514,1,0,0,65,0,0,31.3,0,0,0,65,0,0
+04/01/2017 00:00,int01a,Miscellaneous,GetUser,California,114,0.38,0.02,0.02568,1,0,0,114,0,0,88.41,0,0,0,114,0,0
+04/01/2017 00:00,app101h,Others,Other Transaction,California,85,0.28,0.01,0.01658,1,0,0,85,0,0,33.03,0,0,0,85,0,0
+04/01/2017 00:00,app101m,Miscellaneous,GetProfile,California,1,0,0.05,0.04973,0,0,0,1,0,0,63.66,0,0,0,1,5,0
+04/01/2017 00:00,app101c,Others,Other Transaction,California,40,0.13,0.01,0.02564,1,0,0,40,0,0,28.05,0,0,0,40,0,0
+04/01/2017 00:00,app101k,Others,Other Transaction,California,85,0.28,0.01,0.02557,1,0,0,85,0,0,35.36,0,0,0,85,0,0
+04/01/2017 00:00,app01j,Miscellaneous,GetUser,California,12,0.04,0.03,0.04773,1,0,0,12,0,0,87.96,0,0,0,12,5,0
+04/01/2017 00:00,app01k,Others,Other Transaction,California,80,0.27,0.01,0.02563,1,0,0,80,0,0,32.71,0,0,0,80,0,0
+04/01/2017 00:00,app01q,Others,Other Transaction,California,61,0.2,0.01,0.0287,1,0,0,61,0,0,99.13,0,0,0,61,0,0
+04/01/2017 00:00,app101j,Others,Other Transaction,California,81,0.27,0.01,0.02387,1,0,0,81,0,0,32.28,0,0,0,81,0,0
+04/01/2017 00:00,app01j,Save Order,Save Order Begin,California,3,0.01,0.02,0.05394,1,0,0,3,0,0,42.56,0,0,0,3,5,0
+04/01/2017 00:00,app01p,Others,Other Transaction,California,40,0.13,0.01,0.01591,1,0,0,40,0,0,31.61,0,0,0,40,0,0
+04/01/2017 00:00,app01n,Others,Other Transaction,California,60,0.2,0.01,0.02673,1,0,0,60,0,0,26.7,0,0,0,60,0,0
+04/01/2017 00:00,app01t,Others,Other Transaction,California,100,0.33,0.01,0.02692,1,0,0,100,0,0,49.89,0,0,0,100,0,0
+04/01/2017 00:00,app01z,Miscellaneous,GetUser,California,22,0.07,0.03,0.03296,1,0,0,22,0,0,87.57,0,0,0,22,0,0
+04/01/2017 00:00,app01l,Save Order,Save Order Begin,California,2,0.01,0.04,0.06387,1,0,0,2,0,0,10.61,0,0,0,2,6,0
+04/01/2017 00:00,app01q,Miscellaneous,GetProfile,California,1,0,0.07,0.07334,0,0,0,1,0,0,52.26,0,0,0,1,6,0
+04/01/2017 00:00,int01a,LedgerRead,LedgerRead GetLedger,California,14,0.05,0.03,0.05695,1,0,0,14,0,0,77.66,0,0,0,14,5,0
+04/01/2017 00:00,app101d,Miscellaneous,Documents Disburse,California,2,0.01,0.06,0.07467,1,0,0,2,0,0,7.38,0,0,0,2,6,0
+04/01/2017 00:00,app101b,Others,Other Transaction,California,66,0.22,0.01,0.01636,1,0,0,66,0,0,36.39,0,0,0,66,0,0
+04/01/2017 00:00,app101e,Query,Query Order,California,3,0.01,0.03,0.0775,1,0,0,3,0,0,46.35,0,0,0,3,6,0
+04/01/2017 00:00,app01z,Others,Other Transaction,California,121,0.4,0.01,0.03895,1,0,0,121,0,0,93.18,0,0,0,121,5,0
+04/01/2017 00:00,app01o,Others,Other Transaction,California,78,0.26,0.01,0.03567,1,0,0,78,0,0,98.08,0,0,0,78,0,0
+04/01/2017 00:00,app101e,Miscellaneous,Documents Disburse,California,2,0.01,0.05,0.08977,1,0,0,2,0,0,23.18,0,0,0,2,6,0
+04/01/2017 00:00,app101m,Query,Query Order,California,3,0.01,0.03,0.09055,1,0,0,3,0,0,39.41,0,0,0,3,7,0
+04/01/2017 00:00,app01z,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,0.1,0.10032,0,0,0,1,0,0,70.9,0,0,0,1,7,0
+04/01/2017 00:00,app01s,Others,Other Transaction,California,43,0.14,0.01,0.02875,1,0,0,43,0,0,35.57,0,0,0,43,0,0
+04/01/2017 00:00,app101l,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,0.11,0.11086,0,0,0,1,0,0,61.21,0,0,0,1,7,0
+04/01/2017 00:00,app01z,ProForm LookUpSearch,ProForm LookUpSearch BeginQueryTable,California,2,0.01,0.12,0.1325,1,0,0,2,0,0,20.35,0,0,0,2,7,0
+04/01/2017 00:00,app01v,Others,Other Transaction,California,60,0.2,0.01,0.03272,1,0,0,60,0,0,34.59,0,0,0,60,0,0
+04/01/2017 00:00,app101a,Others,Other Transaction,California,46,0.15,0.02,0.05852,1,0,0,46,0,0,29.7,0,0,0,46,6,0
+04/01/2017 00:00,app101i,Others,Other Transaction,California,44,0.15,0.01,0.0226,1,0,0,44,0,0,96.54,0,0,0,44,0,0
+04/01/2017 00:00,app01l,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.15,0.14883,0,0,0,1,1,91.45,1.58,0,0,0,1,7,0
+04/01/2017 00:00,app01j,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,0.16,0.15523,0,0,0,1,0,0,79.76,0,0,0,1,7,0
+04/01/2017 00:00,app101m,Others,Other Transaction,California,91,0.3,0.02,0.05258,1,0,0,91,0,0,98.95,0,0,0,91,5,0
+04/01/2017 00:00,app101d,Others,Other Transaction,California,299,1,0.01,0.02489,1,0,0,299,0,0,83.33,0,0,0,299,0,0
+04/01/2017 00:00,app101g,Others,Other Transaction,California,74,0.25,0.02,0.06144,1,0,0,74,0,0,34.7,0,0,0,74,6,0
+04/01/2017 00:00,app01d,Others,Other Transaction,California,42,0.14,0.02,0.02899,1,0,0,42,0,0,33.3,0,0,0,42,0,0
+04/01/2017 00:00,app01g,Others,Other Transaction,California,85,0.28,0.01,0.02822,1,0,0,85,0,0,31.83,0,0,0,85,0,0
+04/01/2017 00:00,int01a,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.21,0.21334,0,0,0,1,1,98.95,1.03,0,0,0,1,7,0
+04/01/2017 00:00,int01a,Miscellaneous,OpenOrder,California,25,0.08,0.06,0.06723,1,0,0,25,0,0,74.39,0,0,0,25,6,0
+04/01/2017 00:00,app01x,Others,Other Transaction,California,41,0.14,0.03,0.06231,1,0,0,41,0,0,29.44,0,0,0,41,6,0
+04/01/2017 00:00,app01r,Miscellaneous,OpenOrder,California,1,0,0.23,0.22689,0,0,0,1,0,0,45.22,0,0,0,1,7,0
+04/01/2017 00:00,app01r,Query,Query Order,California,3,0.01,0.09,0.24576,1,0,0,3,0,0,29.59,0,0,0,3,7,0
+04/01/2017 00:00,app101d,Miscellaneous,OpenOrder,California,1,0,0.25,0.24642,0,0,0,1,0,0,45.85,0,0,0,1,7,0
+04/01/2017 00:00,app01c,Others,Other Transaction,California,63,0.21,0.02,0.05117,1,0,0,63,0,0,31.63,0,0,0,63,5,0
+04/01/2017 00:00,app01r,Others,Other Transaction,California,71,0.24,0.02,0.02889,1,0,0,71,0,0,35.07,0,0,0,71,0,0
+04/01/2017 00:00,app01u,Others,Other Transaction,California,113,0.38,0.01,0.01944,1,0,0,113,0,0,36.53,0,0,0,113,0,0
+04/01/2017 00:00,app01l,Others,Other Transaction,California,220,0.73,0.02,0.03737,1,0,0,220,0,0,93.68,0,0,0,220,0,0
+04/01/2017 00:00,app01l,Miscellaneous,OpenOrder,California,3,0.01,0.24,0.25997,1,0,0,3,0,0,55.48,0,0,0,3,8,0
+04/01/2017 00:00,app101e,Miscellaneous,OpenOrder,California,1,0,0.26,0.26124,0,0,0,1,0,0,37.83,0,0,0,1,8,0
+04/01/2017 00:00,int01a,Query,Query Order,California,9,0.03,0.05,0.13893,1,0,0,9,0,0,46.2,0,0,0,9,7,0
+04/01/2017 00:00,app01o,Miscellaneous,OpenOrder,California,1,0,0.3,0.30249,0,0,0,1,0,0,34.63,0,0,0,1,8,0
+04/01/2017 00:00,app101e,Others,Other Transaction,California,227,0.76,0.01,0.01965,1,0,0,227,0,0,95,0,0,0,227,0,0
+04/01/2017 00:00,int01a,LedgerRead,LedgerRead GetOrderInformation,California,37,0.12,0.07,0.06755,1,0,0,37,0,0,69.85,0,0,0,37,6,0
+04/01/2017 00:00,app101m,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.38,0.37775,0,0,0,1,0,0,78.29,0,0,0,1,8,0
+04/01/2017 00:00,app01q,Miscellaneous,OpenOrder,California,1,0,0.43,0.43257,0,0,0,1,0,0,29.18,0,0,0,1,8,0
+04/01/2017 00:00,app101m,Miscellaneous,OpenOrder,California,1,0,0.46,0.46101,0,0,0,1,0,0,26.17,0,0,0,1,8,0
+04/01/2017 00:00,app01q,Pro1099,Pro1099 Record Read BeginQueryIdentities,California,1,0,0.48,0.48274,0,0,0,1,1,24.41,60.57,0,0,0,1,8,0
+04/01/2017 00:00,app01j,Others,Other Transaction,California,171,0.57,0.04,0.06289,1,0,0,171,0,0,98.18,0,0,0,171,6,0
+04/01/2017 00:00,int01a,LedgerRead,LedgerRead QueryLedgers,California,9,0.03,0.61,0.66477,1,0,0,9,0,0,0.34,0,0,0,9,8,0
+04/01/2017 00:00,int01a,Others,Other Transaction,California,912,3.04,0.02,0.03057,1,0,0,912,0,0,95,0,0,0,912,0,0
+04/01/2017 00:00,app01w,Others,Other Transaction,California,87,0.29,0.04,0.03638,1,0,0,87,0,0,31.65,0,0,0,87,0,0
+04/01/2017 00:00,app101d,Query,Query Order,California,3,0.01,0.35,1.04301,1,0,0,3,0,0,43.64,0,0,0,3,8,0
+04/01/2017 00:00,app01o,Query,Query Order,California,3,0.01,0.38,1.12527,1,0,0,3,0,0,44.42,0,0,0,3,8,0
+04/01/2017 00:00,app01q,Query,Query Order,California,3,0.01,0.39,1.163,1,0,0,3,0,0,40.04,0,0,0,3,8,0
+04/01/2017 00:00,app101l,Others,Other Transaction,California,96,0.32,0.04,0.03141,1,0,0,96,0,0,34.09,0,0,0,96,0,0
+04/01/2017 00:00,app101m,ProForm LookUpSearch,Proform LookUpSearch GetRows,California,1,0,2.02,2.02285,0,0,0,1,1,4.3,50.18,0,0,0,1,9,0
+04/01/2017 00:00,app01q,ProForm LookUpSearch,ProForm LookUpSearch BeginQueryTable,California,1,0,2.97,2.96736,0,0,0,1,1,2.42,32.04,0,0,0,1,9,0
+04/01/2017 00:00,app01l,Query,Query Order,California,10,0.03,0.74,3.28895,1,0,0,10,0,0,41.59,0,0,0,10,9,0
+04/01/2017 00:00,app101i,Save Order,Save Order End,California,1,0,7.56,7.56375,0,0,0,1,1,6.7,93.36,0,0,0,1,9,0
+04/01/2017 00:00,int01a,Save Order,Save Order End,California,2,0.01,8.24,8.34521,1,0,0,2,2,7.85,85.61,0,0,0,2,9,0
+04/01/2017 00:00,app01f,Save Order,Save Order End,California,2,0.01,8.16,8.59885,1,0,0,2,2,12.55,94.12,0,0,0,2,9,0
+04/01/2017 00:00,app01z,Save Order,Save Order End,California,1,0,9.34,9.33821,0,0,0,1,1,5.28,78.54,0,0,0,1,9,0
+04/01/2017 00:00,app101e,Save Order,Save Order End,California,3,0.01,8.28,9.67299,1,0,0,3,3,11.29,90.22,0,0,0,3,9,0
+04/01/2017 00:00,app101d,Save Order,Save Order End,California,2,0.01,11.49,12.62308,1,0,0,2,2,5.85,62.18,0,0,0,2,9,0
+04/01/2017 00:00,app01j,Save Order,Save Order End,California,2,0.01,14.46,15.0603,1,0,0,2,2,11.18,83.03,0,0,0,2,9,0
+04/01/2017 00:00,app01l,Save Order,Save Order End,California,2,0.01,13.56,15.27204,1,0,0,2,2,8.18,78.48,0,0,0,2,9,0
+04/01/2017 00:00,app02e,Others,Other Transaction,Washington,1,0,0,0.00023,0,0,0,1,0,0,96.09,0,0,0,1,0,0
+04/01/2017 00:05,int02b,Others,Other Transaction,Washington,6,0.02,0,0.0004,1,0,0,6,0,0,95.83,0,0,0,6,0,0
+04/01/2017 00:00,int02b,Query,Query Order,Washington,6,0.02,0,0.00289,1,0,0,6,0,0,38.6,0,0,0,6,0,0
+04/01/2017 00:00,int02a,Query,QueryProfiles,Washington,1,0,0,0.00356,0,0,0,1,0,0,34.33,0,0,0,1,0,0
+04/01/2017 00:05,app02g,Others,Other Transaction,Washington,1,0,0,0.00381,0,0,0,1,0,0,23.52,0,0,0,1,0,0
+04/01/2017 00:00,app02c,transaction Read,Transaction Read QueryTransactionsHistory,Washington,1,0,0,0.00396,0,0,0,1,0,0,28.79,0,0,0,1,0,0
+04/01/2017 00:00,app02g,Query,QueryProfiles,Washington,2,0.01,0,0.00401,1,0,0,2,0,0,40.23,0,0,0,2,0,0
+04/01/2017 00:00,app02g,transaction Read,Transaction Read QueryTransactionsHistory,Washington,3,0.01,0,0.00519,1,0,0,3,0,0,26.64,0,0,0,3,0,0
+04/01/2017 00:00,app02c,Report,Report EndExportReport,Washington,2,0.01,0.01,0.00594,1,0,0,2,0,0,88.95,0,0,0,2,0,0
+04/01/2017 00:05,int02b,Miscellaneous,GetUser,Washington,1,0,0.01,0.00678,0,0,0,1,0,0,63.79,0,0,0,1,0,0
+04/01/2017 00:00,app02f,transaction Read,Transaction Read QueryTransactionsHistory,Washington,3,0.01,0.01,0.0082,1,0,0,3,0,0,31.56,0,0,0,3,0,0
+04/01/2017 00:05,app02f,Others,Other Transaction,Washington,4,0.01,0,0.00825,1,0,0,4,0,0,29.84,0,0,0,4,0,0
+04/01/2017 00:00,int02b,Miscellaneous,GetUser,Washington,19,0.06,0.01,0.00874,1,0,0,19,0,0,67.41,0,0,0,19,0,0
+04/01/2017 00:00,app02f,Save Order,Save Order Begin,Washington,1,0,0.01,0.00886,0,0,0,1,0,0,31.08,0,0,0,1,0,0
+04/01/2017 00:00,int02b,LedgerRead,LedgerRead GetLedger,Washington,3,0.01,0.01,0.01079,1,0,0,3,0,0,53.58,0,0,0,3,0,0
+04/01/2017 00:00,app02g,Save Order,Save Order Begin,Washington,3,0.01,0.01,0.01172,1,0,0,3,0,0,38.44,0,0,0,3,0,0
+04/01/2017 00:00,int02a,Miscellaneous,GetUser,Washington,25,0.08,0.01,0.01018,1,0,0,25,0,0,67.43,0,0,0,25,0,0
+04/01/2017 00:00,app02g,Miscellaneous,Documents Disburse,Washington,1,0,0.01,0.0127,0,0,0,1,0,0,13.41,0,0,0,1,0,0
+04/01/2017 00:00,int02a,LedgerRead,LedgerRead GetLedger,Washington,7,0.02,0.01,0.01467,1,0,0,7,0,0,58.23,0,0,0,7,0,0
+04/01/2017 00:00,app02c,Save Order,Save Order Begin,Washington,2,0.01,0.01,0.01831,1,0,0,2,0,0,42.7,0,0,0,2,0,0
+04/01/2017 00:00,app02e,Miscellaneous,GetUser,Washington,1,0,0.02,0.02179,0,0,0,1,0,0,89.38,0,0,0,1,0,0
+04/01/2017 00:00,app02f,Query,QueryProfiles,Washington,2,0.01,0.01,0.02301,1,0,0,2,0,0,34.92,0,0,0,2,0,0
+04/01/2017 00:00,int02b,Miscellaneous,OpenOrder,Washington,6,0.02,0.02,0.02478,1,0,0,6,0,0,63.54,0,0,0,6,0,0
+04/01/2017 00:00,int02b,LedgerRead,LedgerRead GetOrderInformation,Washington,5,0.02,0.02,0.02774,1,0,0,5,0,0,48.23,0,0,0,5,5,0
+04/01/2017 00:00,int02a,Save Order,Save Order Begin,Washington,2,0.01,0.02,0.03065,1,0,0,2,0,0,37.63,0,0,0,2,5,0
+04/01/2017 00:00,int02a,LedgerRead,LedgerRead GetOrderInformation,Washington,1,0,0.03,0.03117,0,0,0,1,0,0,46.54,0,0,0,1,5,0
+04/01/2017 00:00,app02f,Miscellaneous,GetUser,Washington,37,0.12,0.02,0.02752,1,0,0,37,0,0,84.01,0,0,0,37,5,0
+04/01/2017 00:00,app02f,Miscellaneous,Documents Disburse,Washington,1,0,0.05,0.04633,0,0,0,1,0,0,4.68,0,0,0,1,6,0
+04/01/2017 00:00,app02g,LedgerRead,LedgerRead GetOrderInformation,Washington,3,0.01,0.05,0.0519,1,0,0,3,0,0,64.44,0,0,0,3,6,0
+04/01/2017 00:00,app02g,Query,Query Order,Washington,5,0.02,0.01,0.05327,1,0,0,5,0,0,44.65,0,0,0,5,6,0
+04/01/2017 00:00,app02c,Query,Query Order,Washington,6,0.02,0.02,0.0577,1,0,0,6,0,0,44.2,0,0,0,6,6,0
+04/01/2017 00:00,app02g,Miscellaneous,GetUser,Washington,50,0.17,0.02,0.02149,1,0,0,50,0,0,88.61,0,0,0,50,0,0
+04/01/2017 00:00,app02c,Miscellaneous,GetUser,Washington,7,0.02,0.02,0.01775,1,0,0,7,0,0,81.09,0,0,0,7,0,0
+04/01/2017 00:00,app02c,Report,Report FreeReport,Washington,1,0,0.09,0.09487,0,0,0,1,0,0,6.51,0,93.28,0,1,7,0
+04/01/2017 00:00,app02c,ProForm LookUpSearch,ProForm LookUpSearch BeginQueryTable,Washington,2,0.01,0.09,0.09536,1,0,0,2,0,0,47.1,0,0,0,2,7,0
+04/01/2017 00:00,app02f,Miscellaneous,OpenOrder,Washington,3,0.01,0.08,0.12753,1,0,0,3,0,0,73.37,0,0,0,3,7,0
+04/01/2017 00:00,int02a,Miscellaneous,OpenOrder,Washington,8,0.03,0.05,0.13363,1,0,0,8,0,0,59.89,0,0,0,8,7,0
+04/01/2017 00:00,app02c,Miscellaneous,OpenOrder,Washington,4,0.01,0.1,0.16488,1,0,0,4,0,0,65.18,0,0,0,4,8,0
+04/01/2017 00:00,app02d,Others,Other Transaction,Washington,173,0.58,0.01,0.01632,1,0,0,173,0,0,34.88,0,0,0,173,0,0
+04/01/2017 00:00,app02c,ProForm LookUpSearch,Proform LookUpSearch GetRows,Washington,5,0.02,0.17,0.17644,1,0,0,5,0,0,13.08,0,0,0,5,8,0
+04/01/2017 00:00,app02g,Miscellaneous,OpenOrder,Washington,5,0.02,0.1,0.19118,1,0,0,5,0,0,81.02,0,0,0,5,8,0
+04/01/2017 00:00,app02h,Others,Other Transaction,Washington,6,0.02,0.1,0.16396,1,0,0,6,0,0,96.4,0,0,0,6,7,0
+04/01/2017 00:00,int02a,LedgerRead,LedgerRead QueryLedgers,Washington,3,0.01,0.22,0.23793,1,0,0,3,0,0,0.79,0,0,0,3,8,0
+04/01/2017 00:00,int02a,Others,Other Transaction,Washington,347,1.16,0.02,0.04731,1,0,0,347,0,0,90,0,0,0,347,6,0
+04/01/2017 00:00,app02f,Others,Other Transaction,Washington,195,0.65,0.01,0.01752,1,0,0,195,0,0,98.18,0,0,0,195,0,0
+04/01/2017 00:00,int02b,Others,Other Transaction,Washington,140,0.47,0.01,0.03937,1,0,0,140,0,0,92.86,0,0,0,140,5,0
+04/01/2017 00:00,app02g,Others,Other Transaction,Washington,280,0.93,0.01,0.01958,1,0,0,280,0,0,95.26,0,0,0,280,0,0
+04/01/2017 00:00,int02a,Query,Query Order,Washington,8,0.03,0.09,0.03537,1,0,0,8,0,0,40.74,0,0,0,8,5,0
+04/01/2017 00:00,app02c,Others,Other Transaction,Washington,379,1.26,0.03,0.06627,1,0,0,379,0,0,99.29,0,0,0,379,7,0
+04/01/2017 00:00,app02c,Report,Report BeginExportReport,Washington,2,0.01,0.65,1.28978,1,0,0,2,0,0,90.18,0,0,0,2,9,0
+04/01/2017 00:00,app02i,Others,Other Transaction,Washington,24,0.08,0.18,0.48789,1,0,0,24,0,0,95.65,0,0,0,24,8,0
+04/01/2017 00:00,int02a,Save Order,Save Order End,Washington,1,0,3.03,3.033,0,0,0,1,1,16.11,80.31,0,0,0,1,9,0
+04/01/2017 00:00,int02a,ProForm LookUpSearch,Proform LookUpSearch GetRows,Washington,2,0.01,4.14,4.36129,1,0,0,2,2,4.67,53.77,0,0,0,2,9,0
+04/01/2017 00:00,app02g,Save Order,Save Order End,Washington,3,0.01,5.17,5.25012,1,0,0,3,3,6.2,69.89,0,0,0,3,9,0
+04/01/2017 00:00,app02f,Save Order,Save Order End,Washington,1,0,6.03,6.02903,0,0,0,1,1,5.14,67.2,0,0,0,1,9,0
+04/01/2017 00:00,app02c,Save Order,Save Order End,Washington,2,0.01,6.47,7.06822,1,0,0,2,2,7.28,72.44,0,0,0,2,9,0
+04/01/2017 00:00,app04p,Others,Other Transaction,Texas,4,0.01,0,0.00023,1,0,0,4,0,0,97.73,0,0,0,4,0,0
+04/01/2017 00:00,app04f,Others,Other Transaction,Texas,2,0.01,0,0.00028,1,0,0,2,0,0,97.39,0,0,0,2,0,0
+04/01/2017 00:00,app04i,Others,Other Transaction,Texas,4,0.01,0,0.00033,1,0,0,4,0,0,96.19,0,0,0,4,0,0
+04/01/2017 00:00,app04l,Others,Other Transaction,Texas,4,0.01,0,0.00042,1,0,0,4,0,0,99.57,0,0,0,4,0,0
+04/01/2017 00:05,int04b,Others,Other Transaction,Texas,3,0.01,0,0.00289,1,0,0,3,0,0,36.46,0,0,0,3,0,0
+04/01/2017 00:00,app04o,Report,Report EndExportReport,Texas,2,0.01,0,0.00332,1,0,0,2,0,0,81.16,0,0,0,2,0,0
+04/01/2017 00:00,int04b,Query,QueryProfiles,Texas,2,0.01,0,0.00402,1,0,0,2,0,0,36.29,0,0,0,2,0,0
+04/01/2017 00:00,int04a,Query,QueryProfiles,Texas,4,0.01,0,0.00471,1,0,0,4,0,0,38.24,0,0,0,4,0,0
+04/01/2017 00:00,int04a,transaction Read,Transaction Read QueryTransactionsHistory,Texas,8,0.03,0,0.00497,1,0,0,8,0,0,32.25,0,0,0,8,0,0
+04/01/2017 00:05,int04a,Others,Other Transaction,Texas,1,0,0.01,0.00646,0,0,0,1,0,0,15.17,0,0,0,1,0,0
+04/01/2017 00:00,int04b,transaction Read,Transaction Read QueryTransactionsHistory,Texas,11,0.04,0,0.00537,1,0,0,11,0,0,34.02,0,0,0,11,0,0
+04/01/2017 00:00,int04a,Miscellaneous,GetUser,Texas,54,0.18,0.01,0.01087,1,0,0,54,0,0,74.07,0,0,0,54,0,0
+04/01/2017 00:00,int04b,Miscellaneous,OpenOrder,Texas,11,0.04,0.02,0.02033,1,0,0,11,0,0,62.55,0,0,0,11,0,0
+04/01/2017 00:00,int04b,Miscellaneous,GetUser,Texas,56,0.19,0.01,0.00861,1,0,0,56,0,0,69.93,0,0,0,56,0,0
+04/01/2017 00:00,app04o,Report,Report FreeReport,Texas,1,0,0.03,0.0314,0,0,0,1,0,0,8.3,0,0,0,1,6,0
+04/01/2017 00:00,int04b,LedgerRead,LedgerRead GetOrderInformation,Texas,21,0.07,0.02,0.02645,1,0,0,21,0,0,57.89,0,0,0,21,5,0
+04/01/2017 00:00,int04a,LedgerRead,LedgerRead GetOrderInformation,Texas,24,0.08,0.03,0.03091,1,0,0,24,0,0,62.08,0,0,0,24,6,0
+04/01/2017 00:00,int04a,Miscellaneous,OpenOrder,Texas,8,0.03,0.04,0.02653,1,0,0,8,0,0,65.34,0,0,0,8,5,0
+04/01/2017 00:00,app04o,Others,Other Transaction,Texas,14,0.05,0.03,0.13034,1,0,0,14,0,0,96.19,0,0,0,14,7,0
+04/01/2017 00:00,app04j,Others,Other Transaction,Texas,49,0.16,0.01,0.03164,1,0,0,49,0,0,90.56,0,0,0,49,6,0
+04/01/2017 00:00,app04o,Report,Report BeginExportReport,Texas,1,0,0.16,0.15949,0,0,0,1,0,0,1.63,0,98.33,0,1,9,0
+04/01/2017 00:00,app04h,Others,Other Transaction,Texas,9,0.03,0.09,0.15133,1,0,0,9,0,0,97.5,0,0,0,9,8,0
+04/01/2017 00:00,app04e,Others,Other Transaction,Texas,5,0.02,0.06,0.17617,1,0,0,5,0,0,95.91,0,0,0,5,9,0
+04/01/2017 00:00,app04n,Others,Other Transaction,Texas,28,0.09,0.02,0.0763,1,0,0,28,0,0,97.62,0,0,0,28,7,0
+04/01/2017 00:00,app04g,Others,Other Transaction,Texas,6,0.02,0.06,0.14751,1,0,0,6,0,0,96.25,0,0,0,6,8,0
+04/01/2017 00:00,app04m,Others,Other Transaction,Texas,5,0.02,0.1,0.19732,1,0,0,5,0,0,98.18,0,0,0,5,9,0
+04/01/2017 00:00,app04c,Others,Other Transaction,Texas,4,0.01,0.13,0.20113,1,0,0,4,0,0,1.32,0,0,0,4,9,0
+04/01/2017 00:00,int04a,Others,Other Transaction,Texas,161,0.54,0.01,0.01568,1,0,0,161,0,0,92.86,0,0,0,161,0,0
+04/01/2017 00:00,int04b,Others,Other Transaction,Texas,185,0.62,0.02,0.04987,1,0,0,185,0,0,91,0,0,0,185,7,0

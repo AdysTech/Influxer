@@ -40,8 +40,7 @@ namespace AdysTech.Influxer
                     {
                         if (typeof(ITransform).IsAssignableFrom(tParam))
                         {
-                            var list = property.GetValue(this.Config) as ICollection;
-                            if (list != null && list.Count > 0)
+                            if (property.GetValue(this.Config) is ICollection list && list.Count > 0)
                                 foreach (ITransform transform in list)
                                 {
                                     _transformations.Add(transform);

@@ -64,8 +64,7 @@ namespace AdysTech.Influxer
             var columns = pattern.Split(line.Replace("\"", ""));
             var columnCount = columns.Count();
 
-            DateTime timeStamp;
-            if (!DateTime.TryParseExact(columns[0], settings.PerfmonFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
+            if (!DateTime.TryParseExact(columns[0], settings.PerfmonFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime timeStamp))
                 throw new FormatException("Couldn't parse " + columns[0] + " using format " + settings.PerfmonFile.TimeFormat + ", check -timeformat argument");
             var utcTime = timeStamp.AddMinutes(minOffset);
 
@@ -77,13 +76,16 @@ namespace AdysTech.Influxer
                 {
                     if (settings.PerfmonFile.MultiMeasurements)
                     {
-                        var point = new InfluxDatapoint<double>();
+                        var point = new InfluxDatapoint<double>
+                        {
+                            Precision = TimePrecision.Milliseconds,
+                            Retention = policy,
+                            MeasurementName = performanceObject.Key,
+                            UtcTimestamp = utcTime
+                        };
+                       
                         if (defaultTags.Count > 0) point.InitializeTags(defaultTags);
                         point.Tags.Add("Host", hostGrp.Key);
-                        point.Precision = TimePrecision.Seconds;
-                        point.Retention = policy;
-                        point.MeasurementName = performanceObject.Key;
-                        point.UtcTimestamp = utcTime;
 
                         double value = 0.0;
 
@@ -105,16 +107,19 @@ namespace AdysTech.Influxer
                     {
                         foreach (var counter in hostGrp)
                         {
-                            double value = 0.0;
-                            if (!String.IsNullOrWhiteSpace(columns[counter.ColumnIndex]) && Double.TryParse(columns[counter.ColumnIndex], out value))
+                            if (!String.IsNullOrWhiteSpace(columns[counter.ColumnIndex]) && Double.TryParse(columns[counter.ColumnIndex], out double value))
                             {
-                                var point = new InfluxDatapoint<double>();
-                                point.Precision = TimePrecision.Seconds;
-                                point.Retention = policy;
+                                var point = new InfluxDatapoint<double>()
+                                {
+                                    Precision = TimePrecision.Milliseconds,
+                                    Retention = policy,
+                                    MeasurementName = settings.InfluxDB.Measurement,
+                                    UtcTimestamp = utcTime
+                                };
+
                                 if (defaultTags.Count > 0) point.InitializeTags(defaultTags);
                                 point.Tags.Add("Host", hostGrp.Key);
-                                point.MeasurementName = settings.InfluxDB.Measurement;
-                                point.UtcTimestamp = utcTime;
+
                                 point.Tags.Add("PerformanceObject", counter.PerformanceObject);
                                 point.Tags.Add("PerformanceCounter", counter.CounterName);
                                 point.Fields.Add("CounterValue", value);

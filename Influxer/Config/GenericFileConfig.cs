@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System.Collections.Generic;
 
 namespace AdysTech.Influxer.Config
 {
@@ -39,6 +41,14 @@ namespace AdysTech.Influxer.Config
         [CommandLineArgAttribute("-skip", Usage = "-skip <Row No>", Description = "Indicates how may roaws should be skipped after header row to get data rows")]
         [DefaultValue(Converter = Converters.IntParser)]
         public int SkipRows
+        {
+            get; set;
+        }
+
+        [CommandLineArg("-timetype", Usage = "-timetype <type>", Description = "Type of Time format used in input files, String, Epoch or Binary")]
+        [DefaultValue(Value = "String", Converter = Converters.EnumParser)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public TimeForamtType TimeFormatType
         {
             get; set;
         }

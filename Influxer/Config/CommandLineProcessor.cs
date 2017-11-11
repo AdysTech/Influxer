@@ -1,8 +1,10 @@
 ﻿using AdysTech.Influxer.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -24,13 +26,17 @@ namespace AdysTech.Influxer.Config
         {
             if (args.Length == 0)
             {
+                var help = new StringBuilder();
+                help.AppendLine($"Influxer Version: {FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion}");
+                help.AppendLine($"Build: {FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}");
+                Logger.Log(LogLevel.Info, help.ToString());
                 throw new ArgumentException("Command line arguments not valid, try --help to see valid ones!");
             }
 
             #region Parse command line arguments
 
             Dictionary<string, string> cmdArgs = new Dictionary<string, string>();
-            Regex commandSwitch = new Regex("^-[-a-zA-Z+]|^/[a-zA-Z+]", RegexOptions.Compiled);
+            Regex commandSwitch = new Regex("^-[-a-zA-Z+]|^/[?a-zA-Z+]", RegexOptions.Compiled);
             for (int i = 0; i < args.Length; i++)
             {
                 if (commandSwitch.IsMatch(args[i]))
@@ -51,6 +57,8 @@ namespace AdysTech.Influxer.Config
             if (cmdArgs.ContainsKey("--help") || cmdArgs.ContainsKey("/help") || cmdArgs.ContainsKey("/?"))
             {
                 var help = new StringBuilder();
+                help.AppendLine($"Influxer Version: {FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion}");
+                help.AppendLine($"Build: {FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}");
                 help.AppendLine("Influxer is an application to parse log files, push data to Influx for later visualization.");
                 help.AppendLine("It currently supports Windows Perfmon and any generic delimited file formats");
                 help.AppendLine("It uses InfluxDB.Client.Net to interact with Influx.");
