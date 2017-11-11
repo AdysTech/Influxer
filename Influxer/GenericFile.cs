@@ -49,10 +49,11 @@ namespace AdysTech.Influxer
             var columnCount = columns.Count();
             var content = columns[settings.GenericFile.TimeColumn - 1].Replace("\"", "");
 
-            InfluxDatapoint<InfluxValueField> point = new InfluxDatapoint<InfluxValueField>();
-            point.Precision = settings.GenericFile.Precision;
-            point.MeasurementName = settings.InfluxDB.Measurement;
-
+            InfluxDatapoint<InfluxValueField> point = new InfluxDatapoint<InfluxValueField>()
+            {
+                Precision = settings.GenericFile.Precision,
+                MeasurementName = settings.InfluxDB.Measurement
+            };
             point.InitializeTags(defaultTags);
 
             var pointData = new Dictionary<GenericColumn, string>();
@@ -81,10 +82,7 @@ namespace AdysTech.Influxer
 
                 if (d.Key.ColumnIndex == settings.GenericFile.TimeColumn - 1)
                 {
-                    DateTime timeStamp;
-                    if (!DateTime.TryParseExact(content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
-                        throw new FormatException("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
-                    point.UtcTimestamp = timeStamp.AddMinutes(settings.GenericFile.UtcOffset);
+                    point.UtcTimestamp = ParseTimestamp(content);
                 }
                 else
                 {
@@ -114,6 +112,29 @@ namespace AdysTech.Influxer
                 throw new InvalidDataException("No values found on the row to post to Influx");
 
             return point;
+        }
+
+        private DateTime ParseTimestamp(string content)
+        {
+
+            switch (settings.GenericFile.TimeFormatType)
+            {
+                case TimeForamtType.String:
+                    if (!DateTime.TryParseExact(content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime timeStamp))
+                        throw new FormatException("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
+                    return timeStamp.AddMinutes(settings.GenericFile.UtcOffset);
+                case TimeForamtType.Binary:
+                    if (long.TryParse(content, out long ts))
+                        return DateTime.FromBinary(ts);
+                    else
+                        throw new FormatException("Couldn't parse " + content + " as a Binary timestamp, please check the data or -timetype/TimeformatType arguments");
+                case TimeForamtType.Epoch:
+                    if (long.TryParse(content, out long ep))
+                        return ep.FromEpoch(settings.GenericFile.Precision);
+                    else
+                        throw new FormatException("Couldn't parse " + content + " as a epoch timestamp, please check the data or -timetype/TimeformatType arguments");
+            }
+            return DateTime.MinValue;
         }
 
         public List<GenericColumn> ColumnHeaders { get; private set; }
@@ -455,9 +476,7 @@ namespace AdysTech.Influxer
 
                     if (d.Key.ColumnIndex == settings.GenericFile.TimeColumn - 1)
                     {
-                        DateTime timeStamp;
-                        if (!DateTime.TryParseExact(content, settings.GenericFile.TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out timeStamp))
-                            throw new FormatException("Couldn't parse " + content + " using format " + settings.GenericFile.TimeFormat + ", check -timeformat argument");
+                        ParseTimestamp(content);
                     }
 
                     if (String.IsNullOrWhiteSpace(content))

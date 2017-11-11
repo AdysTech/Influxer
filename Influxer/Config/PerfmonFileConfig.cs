@@ -51,6 +51,7 @@ namespace AdysTech.Influxer.Config
             get; set;
         }
 
+        
         [CommandLineArg("-timeformat", Usage = "-TimeFormat <format>", Description = "Time format used in input files")]
         [DefaultValue(Value = "MM/dd/yyyy HH:mm:ss.fff")]
         public string TimeFormat

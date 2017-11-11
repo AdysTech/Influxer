@@ -1,4 +1,5 @@
 ﻿//Copyright -  Adarsha@AdysTech
+using AdysTech.InfluxDB.Client.Net;
 using System;
 using System.Collections.Generic;
 
@@ -47,5 +48,25 @@ namespace AdysTech.Influxer
             for (int i = 0; i < str.Length; i += width)
                 yield return str.Substring(i, Math.Min(width, str.Length - i));
         }
+    }
+
+    public static class LongExtensionMethods
+    {
+        private static readonly DateTime Origin = new DateTime(new DateTime(1970, 1, 1).Ticks, DateTimeKind.Utc);
+
+        public static DateTime FromEpoch(this long epoch, TimePrecision precision)
+        {
+            switch (precision)
+            {
+                case TimePrecision.Hours: return Origin.AddHours(epoch);
+                case TimePrecision.Minutes: return Origin.AddMinutes(epoch);
+                case TimePrecision.Seconds: return Origin.AddSeconds(epoch);
+                case TimePrecision.Milliseconds: return Origin.AddMilliseconds(epoch);
+                case TimePrecision.Microseconds: return Origin.AddTicks(epoch / 1000 * TimeSpan.TicksPerMillisecond);
+                case TimePrecision.Nanoseconds: return Origin.AddTicks(epoch / 100); //1 tick = 100 nano sec
+            }
+            return Origin;
+        }
+
     }
 }

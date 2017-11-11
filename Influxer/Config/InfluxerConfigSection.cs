@@ -25,6 +25,13 @@ namespace AdysTech.Influxer.Config
         Columns
     }
 
+    public enum TimeForamtType
+    {
+        String,
+        Epoch,
+        Binary
+    }
+
     public class InfluxerConfigSection : OverridableConfigElement
     {
         private static InfluxerConfigSection _instance;
@@ -87,12 +94,14 @@ namespace AdysTech.Influxer.Config
                     section.GenericFile.ColumnLayout.Add(new ColumnConfig() { NameInFile = "SampleColumn123, if this is missing column position is used", InfluxName = "Tag_Transaction", Skip = false, DataType = ColumnDataType.Tag });
                     section.GenericFile.ColumnLayout[2].ExtractTransformations.Add(new ExtractTransformation() { Type = ExtractType.SubString, StartIndex = 0, Length = 10 });
 
-                    section.GenericFile.DefaultTags = new List<string>();
-                    section.GenericFile.DefaultTags.Add("Server=ABCD");
-                    section.GenericFile.DefaultTags.Add("Region=North");
+                    section.GenericFile.DefaultTags = new List<string>
+                    {
+                        "Server=ABCD",
+                        "Region=North"
+                    };
                 }
             }
-            var content = JsonConvert.SerializeObject(_instance, Formatting.Indented);
+            var content = JsonConvert.SerializeObject(section, Formatting.Indented);
 
             //do not close the writer to keep the underlying stream open.
             StreamWriter writer = new StreamWriter(outStream);
@@ -166,8 +175,7 @@ namespace AdysTech.Influxer.Config
             help.AppendLine("Required flags");
             foreach (var prop in this.GetType().GetProperties())
             {
-                var cmdAttribute = prop.GetCustomAttributes(typeof(CommandLineArgAttribute), true).FirstOrDefault() as CommandLineArgAttribute;
-                if (cmdAttribute != null)
+                if (prop.GetCustomAttributes(typeof(CommandLineArgAttribute), true).FirstOrDefault() is CommandLineArgAttribute cmdAttribute)
                 {
                     help.AppendFormat("{0,-40}\t\t{1,-100}", cmdAttribute.Usage, cmdAttribute.Description);
                     //if (!String.IsNullOrWhiteSpace (cmdAttribute.DefaultValue))
@@ -193,17 +201,17 @@ namespace AdysTech.Influxer.Config
         {
             if (CommandLine == null || CommandLine.Count == 0) return true;
 
-            bool found = false;
-            bool ret;
-            ret = base.ProcessCommandLineArguments(CommandLine);
-            found = !found ? ret : found;
-
+            bool ret1, ret2, ret3;
+            ret1 = base.ProcessCommandLineArguments(CommandLine);
+            
+            ret2 = InfluxDB.ProcessCommandLineArguments(CommandLine);
+            
             if (FileFormat == FileFormats.Perfmon)
-                ret = PerfmonFile.ProcessCommandLineArguments(CommandLine);
+                ret3 = PerfmonFile.ProcessCommandLineArguments(CommandLine);
             else
-                ret = GenericFile.ProcessCommandLineArguments(CommandLine);
+                ret3 = GenericFile.ProcessCommandLineArguments(CommandLine);
 
-            return !found ? ret : found;
+            return (ret1 || ret2 || ret3);
         }
 
         #endregion IOverridableConfig Members

@@ -72,5 +72,10 @@ namespace AdysTech.Influxer.Config
         {
             get; set;
         }
+        public ColumnConfig()
+        {
+            ExtractTransformations = new ExtractTransformationCollection();
+            ReplaceTransformations = new ReplaceTransformationCollection();
+        }
     }
 }
