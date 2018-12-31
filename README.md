@@ -4,7 +4,7 @@ A C# console application to parse log files (currently only Windows Perfmon form
 [InfluxDB][1] is a very nice time series database, and is supported by many data visualizers (mainly [grafana][2]). But if you have other tools which are producing the data in csv format (mainly PerfMon in windows, or enterprise reporting tools) which are not designed for Influx era, you will have to develop own tools to pull from one tool and to push to other.
 
 Meet Influxer, a small C# console application, which will take any text files with time series and upload it to any Influx instance.
-It has special handling for Microsoft Windows Perfmon file format. It can be configured (via command lines or by configuration files) to handle any type of text files.
+It has special handling for Microsoft Windows Perfmon file format. It can be configured (via command line or by configuration files) to handle any type of text files.
 
 ##### Steps to generate configuration file
 1. Find out the time format for the input file
