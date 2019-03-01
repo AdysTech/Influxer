@@ -1,3 +1,8 @@
+## v0.9.5.0 [12/31/2018]
+
+### Release Notes
+Updated dependencies, modified test case to check autogen policy.
+
 ## v0.9.0.0 [11/11/2017]
 
 ### Release Notes
