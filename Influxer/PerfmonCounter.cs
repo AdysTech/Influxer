@@ -8,5 +8,6 @@ namespace AdysTech.Influxer
         public string CounterName { get; set; }
         public string Host { get; set; }
         public string PerformanceObject { get; set; }
+        public string CounterInstance { get; set; }
     }
 }

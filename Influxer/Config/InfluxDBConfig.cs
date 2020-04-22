@@ -35,7 +35,7 @@
         }
 
         [CommandLineArg("-batch", Usage = "-batch <number of points>", Description = "No of points to send to InfluxDB in one request")]
-        [DefaultValue(Value = "128", Converter = Converters.IntParser)]
+        [DefaultValue(Value = "10000", Converter = Converters.IntParser)]
         public int PointsInSingleBatch
         {
             get; set;
