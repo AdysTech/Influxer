@@ -76,7 +76,7 @@ namespace Influxer.Test
         [TestMethod]
         public async Task TestGenericHeaderless()
         {
-            var settings = InfluxerConfigSection.Load(Path.Combine(TestFilesPath, "HeaderlessText.conf"),true);
+            var settings = InfluxerConfigSection.Load(Path.Combine(TestFilesPath, "HeaderlessText.conf"), true);
             settings.InputFileName = Path.Combine(TestFilesPath, "HeaderlessText.txt");
             var client = await GetClientAsync(settings);
             var file = new GenericFile();
@@ -158,15 +158,24 @@ namespace Influxer.Test
         {
             var settings = InfluxerConfigSection.LoadDefault();
             settings.FileFormat = FileFormats.Perfmon;
-            settings.InfluxDB.RetentionDuration = (int)TimeSpan.FromDays(365*2).TotalMinutes;
-            settings.InfluxDB.RetentionPolicy = "autogen1";
+            //settings.InfluxDB.RetentionDuration = (int)TimeSpan.FromDays(365 * 2).TotalMinutes;
+            //settings.InfluxDB.RetentionPolicy = "autogen1";
             settings.PerfmonFile.MultiMeasurements = true;
-            
+            settings.InfluxDB.PointsInSingleBatch = 100;
             settings.InputFileName = Path.Combine(TestFilesPath, "Perfmon.csv");
             var client = await GetClientAsync(settings);
-            var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
-            //Debug.WriteLine (result.ToString ());
-            Assert.IsTrue(result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 5347 && result.PointsFailed == 0, "Processing Perfmon file failed");
+            try
+            {
+                var result = await new PerfmonFile().ProcessPerfMonLog(settings.InputFileName, client);
+                //Debug.WriteLine (result.ToString ());
+                Assert.IsTrue(result.ExitCode == ExitCode.ProcessedWithErrors && result.PointsFound == 191 && result.PointsFailed == 0, "Processing Perfmon file failed");
+            }
+            catch (Exception e)
+            {
+                Assert.Fail("Unexpected exception of type {0} caught: {1}",
+                            e.GetType(), e.Message);
+                return;
+            }
         }
 
         [TestMethod]

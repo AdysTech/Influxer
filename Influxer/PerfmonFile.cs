@@ -19,7 +19,7 @@ namespace AdysTech.Influxer
         private int minOffset;
 
         private Regex pattern;
-
+        private Regex instanceCapture;
         private IInfluxRetentionPolicy policy = null;
 
         private InfluxerConfigSection settings;
@@ -47,15 +47,25 @@ namespace AdysTech.Influxer
             var columns = pattern.Split(headerLine);
             var column = 1;
 
-            perfCounters.AddRange(columns.Skip(quoted ? 1 : 0).Where(s => quoted ? s.StartsWith("\"\\") : s.StartsWith("\\")).Select(p =>
-              p.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith).Split('\\')).Select(p =>
-              new PerfmonCounter()
-              {
-                  ColumnIndex = column++,
-                  Host = p[2].Trim(settings.InfluxDB.InfluxReserved.ReplaceReservedWith),
-                  PerformanceObject = p[3].Trim(settings.InfluxDB.InfluxReserved.ReplaceReservedWith),
-                  CounterName = p[4].Trim(settings.InfluxDB.InfluxReserved.ReplaceReservedWith)
-              }));
+            perfCounters.AddRange(columns.Skip(quoted ? 1 : 0).Where(s => quoted ? s.StartsWith("\"\\") : s.StartsWith("\\")).Select(c =>
+            {
+                var p = c.Split('\\');
+                var pc = new PerfmonCounter()
+                {
+                    ColumnIndex = column++,
+                    Host = p[2],
+                    CounterName = p[4].Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith).Trim(settings.InfluxDB.InfluxReserved.ReplaceReservedWith)
+                };
+                if (instanceCapture.IsMatch(p[3])) {
+                    var match = instanceCapture.Match(p[3]);
+                    pc.PerformanceObject = match.Groups[1].Value.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith).Trim(settings.InfluxDB.InfluxReserved.ReplaceReservedWith);
+                    pc.CounterInstance = match.Groups[2].Value.Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith).Trim(settings.InfluxDB.InfluxReserved.ReplaceReservedWith);
+                }
+                else {
+                    pc.PerformanceObject = p[3].Replace(settings.InfluxDB.InfluxReserved.ReservedCharecters.ToCharArray(), settings.InfluxDB.InfluxReserved.ReplaceReservedWith).Trim(settings.InfluxDB.InfluxReserved.ReplaceReservedWith);
+                }
+                return pc;
+            }));
             return perfCounters;
         }
 
@@ -68,7 +78,7 @@ namespace AdysTech.Influxer
                 throw new FormatException("Couldn't parse " + columns[0] + " using format " + settings.PerfmonFile.TimeFormat + ", check -timeformat argument");
             var utcTime = timeStamp.AddMinutes(minOffset);
 
-            var points = new List<IInfluxDatapoint>();
+            var points = new List<IInfluxDatapoint>(perfGroup.Count());
 
             foreach (var performanceObject in perfGroup)
             {
@@ -83,7 +93,7 @@ namespace AdysTech.Influxer
                             MeasurementName = performanceObject.Key,
                             UtcTimestamp = utcTime
                         };
-                       
+
                         if (defaultTags.Count > 0) point.InitializeTags(defaultTags);
                         point.Tags.Add("Host", hostGrp.Key);
 
@@ -91,6 +101,9 @@ namespace AdysTech.Influxer
 
                         foreach (var counter in hostGrp)
                         {
+                            if (!point.Tags.ContainsKey("CounterInstance") && !string.IsNullOrWhiteSpace(counter.CounterInstance))
+                                point.Tags.Add("CounterInstance", counter.CounterInstance);
+
                             if (!String.IsNullOrWhiteSpace(columns[counter.ColumnIndex]) && Double.TryParse(columns[counter.ColumnIndex], out value))
                             {
                                 //Perfmon file can have duplicate columns!!
@@ -119,9 +132,10 @@ namespace AdysTech.Influxer
 
                                 if (defaultTags.Count > 0) point.InitializeTags(defaultTags);
                                 point.Tags.Add("Host", hostGrp.Key);
-
                                 point.Tags.Add("PerformanceObject", counter.PerformanceObject);
                                 point.Tags.Add("PerformanceCounter", counter.CounterName);
+                                if(!string.IsNullOrWhiteSpace(counter.CounterInstance))
+                                    point.Tags.Add("CounterInstance", counter.CounterInstance);
                                 point.Fields.Add("CounterValue", value);
                                 points.Add(point);
                             }
@@ -136,6 +150,8 @@ namespace AdysTech.Influxer
         {
             settings = InfluxerConfigSection.GetCurrentOrDefault();
             pattern = new Regex(settings.PerfmonFile.ColumnSplitter, RegexOptions.Compiled);
+            instanceCapture = new Regex("(?<object>.+?)\\((?<instance>.*)\\)", RegexOptions.Compiled);
+
             defaultTags = new Dictionary<string, string>();
             if (settings.PerfmonFile.DefaultTags != null && settings.PerfmonFile.DefaultTags.Count > 0)
             {
@@ -249,7 +265,7 @@ namespace AdysTech.Influxer
                                 bool postresult = false;
                                 try
                                 {
-                                    postresult = await client.PostPointsAsync(settings.InfluxDB.DatabaseName, points);
+                                    postresult = await client.PostPointsAsync(settings.InfluxDB.DatabaseName, points, settings.InfluxDB.PointsInSingleBatch);
                                 }
                                 catch (ServiceUnavailableException)
                                 {
@@ -298,7 +314,7 @@ namespace AdysTech.Influxer
                 {
                     if (await client.PostPointsAsync(settings.InfluxDB.DatabaseName, points))
                     {
-                        result.PointsProcessed += points.Count;
+                        result.PointsProcessed += points.Count(p => p.Saved);
                         points.Clear();
                     }
                     else
